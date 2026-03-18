@@ -87,116 +87,202 @@ const complianceChecks = [
     { ok: true, text: 'Cross-match Records — Up to Date' },
 ];
 
+// Contextual Unsplash images matching the dark medical theme
+const TAB_IMAGES = {
+    Inventory: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=1200&q=80&fit=crop',
+    Donors: 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=1200&q=80&fit=crop',
+    Compliance: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200&q=80&fit=crop',
+    Analytics: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80&fit=crop',
+    Emergency: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=1200&q=80&fit=crop',
+    Integrations: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80&fit=crop',
+};
+
 function Feat({ children }) {
-    return <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 600, fontSize: 15, color: 'var(--text2)', marginBottom: 10 }}>{children}</div>;
+    return (
+        <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 600, fontSize: 15, color: 'var(--text2)', marginBottom: 10 }}>
+            {children}
+        </div>
+    );
+}
+
+// Reusable atmospheric image panel
+function TabImage({ src, alt, height = 280 }) {
+    return (
+        <FadeUp delay={0.2}>
+            <div style={{
+                position: 'relative',
+                borderRadius: 20,
+                overflow: 'hidden',
+                height,
+                width: '100%',
+                border: '1px solid rgba(217,0,37,0.15)',
+            }}>
+                <img
+                    src={src}
+                    alt={alt}
+                    loading="lazy"
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        filter: 'grayscale(25%) brightness(0.5)',
+                    }}
+                />
+                {/* Red-tinted gradient overlay */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(135deg, rgba(217,0,37,0.2) 0%, rgba(7,7,11,0.6) 70%)',
+                }} />
+                {/* Bottom fade into page bg */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: 0, left: 0, right: 0,
+                    height: '55%',
+                    background: 'linear-gradient(to top, var(--bg) 0%, transparent 100%)',
+                }} />
+                {/* CRT scan-line texture */}
+                <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px)',
+                    pointerEvents: 'none',
+                }} />
+            </div>
+        </FadeUp>
+    );
 }
 
 function TabInventory() {
     return (
-        <div className="responsive-grid" style={{ maxWidth: 1400, margin: '0 auto' }}>
-            <FadeUp>
-                <MonoLabel>01 · INVENTORY</MonoLabel>
-                <h2 style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 'clamp(32px,4.5vw,52px)', marginBottom: 20 }}>Know Every Drop. Always.</h2>
-                <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 16, color: 'var(--text2)', lineHeight: 1.8, marginBottom: 24 }}>
-                    Real-time tracking of every blood unit from collection to transfusion. Temperature monitoring, location tracking, and automated expiry management.
-                </p>
-                {inventoryFeatures.map(f => <Feat key={f}>{f}</Feat>)}
-                <a href="#" style={{ display: 'inline-block', marginTop: 8, color: 'var(--red)', fontFamily: 'var(--font-sub)', fontWeight: 700, fontSize: 15 }}>Explore Inventory →</a>
-            </FadeUp>
-            <FadeUp delay={0.15}>
-                <div className="hema-card" style={{ padding: 28, borderRadius: 20 }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
-                        LIVE INVENTORY · KIMS Trivandrum
-                    </div>
-                    {bloodTypes.map(({ type, units, pct, status, color }) => (
-                        <div key={type} style={{ display: 'grid', gridTemplateColumns: '48px 64px 1fr 90px', gap: '0 12px', marginBottom: 14, alignItems: 'center' }}>
-                            <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 700 }}>{type}</div>
-                            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text2)' }}>{units.toLocaleString()}</div>
-                            <div style={{ background: 'var(--bg)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-                                <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4 }} />
-                            </div>
-                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, display: 'flex', alignItems: 'center', gap: 4, textTransform: 'uppercase' }}>
-                                {color === '#D90025' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)', display: 'inline-block', animation: 'pulse 1s infinite' }} />}
-                                {status}
-                            </div>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div className="responsive-grid">
+                <FadeUp>
+                    <MonoLabel>01 · INVENTORY</MonoLabel>
+                    <h2 style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 'clamp(32px,4.5vw,52px)', marginBottom: 20 }}>
+                        Know Every Drop. Always.
+                    </h2>
+                    <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 16, color: 'var(--text2)', lineHeight: 1.8, marginBottom: 24 }}>
+                        Real-time tracking of every blood unit from collection to transfusion. Temperature monitoring, location tracking, and automated expiry management.
+                    </p>
+                    {inventoryFeatures.map(f => <Feat key={f}>{f}</Feat>)}
+                    <a href="#" style={{ display: 'inline-block', marginTop: 8, color: 'var(--red)', fontFamily: 'var(--font-sub)', fontWeight: 700, fontSize: 15 }}>
+                        Explore Inventory →
+                    </a>
+                </FadeUp>
+                <FadeUp delay={0.15}>
+                    <div className="hema-card" style={{ padding: 28, borderRadius: 20 }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
+                            LIVE INVENTORY · KIMS Trivandrum
                         </div>
-                    ))}
-                </div>
-            </FadeUp>
+                        {bloodTypes.map(({ type, units, pct, status, color }) => (
+                            <div key={type} style={{ display: 'grid', gridTemplateColumns: '48px 64px 1fr 90px', gap: '0 12px', marginBottom: 14, alignItems: 'center' }}>
+                                <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 700 }}>{type}</div>
+                                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text2)' }}>{units.toLocaleString()}</div>
+                                <div style={{ background: 'var(--bg)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
+                                    <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4 }} />
+                                </div>
+                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color, display: 'flex', alignItems: 'center', gap: 4, textTransform: 'uppercase' }}>
+                                    {color === '#D90025' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)', display: 'inline-block', animation: 'pulse 1s infinite' }} />}
+                                    {status}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </FadeUp>
+            </div>
+            {/* Wide atmospheric image below */}
+            <div style={{ marginTop: 48 }}>
+                <TabImage src={TAB_IMAGES.Inventory} alt="Blood sample tubes in laboratory" height={260} />
+            </div>
         </div>
     );
 }
 
 function TabDonors() {
     return (
-        <div className="responsive-grid" style={{ maxWidth: 1400, margin: '0 auto' }}>
-            <FadeUp>
-                <div className="hema-card" style={{ padding: 32, borderRadius: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 24 }}>
-                        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 22 }}>AJ</div>
-                        <div>
-                            <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 700, fontSize: 18 }}>Arjun Jayakumar</div>
-                            <div style={{ display: 'inline-block', background: 'rgba(217,0,37,0.15)', border: '1px solid rgba(217,0,37,0.3)', borderRadius: 6, padding: '2px 10px', fontFamily: 'var(--font-head)', fontSize: 18, color: 'var(--red)', marginTop: 4 }}>A+</div>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div className="responsive-grid">
+                <FadeUp>
+                    <div className="hema-card" style={{ padding: 32, borderRadius: 20 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 24 }}>
+                            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 22 }}>AJ</div>
+                            <div>
+                                <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 700, fontSize: 18 }}>Arjun Jayakumar</div>
+                                <div style={{ display: 'inline-block', background: 'rgba(217,0,37,0.15)', border: '1px solid rgba(217,0,37,0.3)', borderRadius: 6, padding: '2px 10px', fontFamily: 'var(--font-head)', fontSize: 18, color: 'var(--red)', marginTop: 4 }}>A+</div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
+                            {[['23', 'Donations'], ['8 Yrs', 'Active'], ['A+', 'Blood Type']].map(([v, l]) => (
+                                <div key={l} style={{ textAlign: 'center' }}>
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 20 }}>{v}</div>
+                                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase' }}>{l}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text2)', marginBottom: 16 }}>Next Eligible: March 15, 2025</div>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <button className="btn-primary" style={{ padding: '8px 18px', fontSize: 13 }}>Send Recall</button>
+                            <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 700, fontSize: 15, color: '#22c55e' }}>98% Eligibility</div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-                        {[['23', 'Donations'], ['8 Yrs', 'Active'], ['A+', 'Blood Type']].map(([v, l]) => (
-                            <div key={l} style={{ textAlign: 'center' }}>
-                                <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 20 }}>{v}</div>
-                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase' }}>{l}</div>
-                            </div>
-                        ))}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text2)', marginBottom: 16 }}>Next Eligible: March 15, 2025</div>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <button className="btn-primary" style={{ padding: '8px 18px', fontSize: 13 }}>Send Recall</button>
-                        <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 700, fontSize: 15, color: '#22c55e' }}>98% Eligibility</div>
-                    </div>
-                </div>
-            </FadeUp>
-            <FadeUp delay={0.15}>
-                <MonoLabel>02 · DONOR MANAGEMENT</MonoLabel>
-                <h2 style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 'clamp(32px,4.5vw,52px)', marginBottom: 20 }}>Every Donor. Perfectly Managed.</h2>
-                <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 16, color: 'var(--text2)', lineHeight: 1.8, marginBottom: 24 }}>
-                    Build a loyal donor community with intelligent recall systems matched to your hospital's exact needs.
-                </p>
-                {donorFeatures.map(f => <Feat key={f}>{f}</Feat>)}
-            </FadeUp>
+                </FadeUp>
+                <FadeUp delay={0.15}>
+                    <MonoLabel>02 · DONOR MANAGEMENT</MonoLabel>
+                    <h2 style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 'clamp(32px,4.5vw,52px)', marginBottom: 20 }}>
+                        Every Donor. Perfectly Managed.
+                    </h2>
+                    <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 16, color: 'var(--text2)', lineHeight: 1.8, marginBottom: 24 }}>
+                        Build a loyal donor community with intelligent recall systems matched to your hospital's exact needs.
+                    </p>
+                    {donorFeatures.map(f => <Feat key={f}>{f}</Feat>)}
+                </FadeUp>
+            </div>
+            <div style={{ marginTop: 48 }}>
+                <TabImage src={TAB_IMAGES.Donors} alt="Blood donation" height={260} />
+            </div>
         </div>
     );
 }
 
 function TabCompliance() {
     return (
-        <div className="responsive-grid" style={{ maxWidth: 1400, margin: '0 auto' }}>
-            <FadeUp>
-                <MonoLabel>03 · COMPLIANCE</MonoLabel>
-                <h2 style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 'clamp(32px,4.5vw,52px)', marginBottom: 20 }}>Zero Paperwork. Full Compliance.</h2>
-                <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 16, color: 'var(--text2)', lineHeight: 1.8, marginBottom: 24 }}>
-                    Automated reporting and audit trails keep you compliant without the manual effort.
-                </p>
-                {complianceFeatures.map(f => <Feat key={f}>{f}</Feat>)}
-            </FadeUp>
-            <FadeUp delay={0.15}>
-                <div className="hema-card" style={{ padding: 32, borderRadius: 20 }}>
-                    <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                        <svg viewBox="0 0 120 120" width="130" height="130">
-                            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" strokeWidth="8" />
-                            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--red)" strokeWidth="8"
-                                strokeDasharray={`${2 * Math.PI * 50 * 0.94} ${2 * Math.PI * 50 * 0.06}`}
-                                strokeDashoffset={2 * Math.PI * 50 * 0.25} strokeLinecap="round" />
-                            <text x="60" y="56" textAnchor="middle" fill="#fff" fontSize="22" fontFamily="Syne" fontWeight="800">94%</text>
-                            <text x="60" y="71" textAnchor="middle" fill="var(--text2)" fontSize="9" fontFamily="Space Mono">COMPLIANCE</text>
-                        </svg>
-                    </div>
-                    {complianceChecks.map(({ ok, text }) => (
-                        <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                            <span>{ok ? '✅' : '⚠️'}</span>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: ok ? 'var(--text2)' : '#f59e0b' }}>{text}</span>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div className="responsive-grid">
+                <FadeUp>
+                    <MonoLabel>03 · COMPLIANCE</MonoLabel>
+                    <h2 style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 'clamp(32px,4.5vw,52px)', marginBottom: 20 }}>
+                        Zero Paperwork. Full Compliance.
+                    </h2>
+                    <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 16, color: 'var(--text2)', lineHeight: 1.8, marginBottom: 24 }}>
+                        Automated reporting and audit trails keep you compliant without the manual effort.
+                    </p>
+                    {complianceFeatures.map(f => <Feat key={f}>{f}</Feat>)}
+                </FadeUp>
+                <FadeUp delay={0.15}>
+                    <div className="hema-card" style={{ padding: 32, borderRadius: 20 }}>
+                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                            <svg viewBox="0 0 120 120" width="130" height="130">
+                                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" strokeWidth="8" />
+                                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--red)" strokeWidth="8"
+                                    strokeDasharray={`${2 * Math.PI * 50 * 0.94} ${2 * Math.PI * 50 * 0.06}`}
+                                    strokeDashoffset={2 * Math.PI * 50 * 0.25} strokeLinecap="round" />
+                                <text x="60" y="56" textAnchor="middle" fill="#fff" fontSize="22" fontFamily="Syne" fontWeight="800">94%</text>
+                                <text x="60" y="71" textAnchor="middle" fill="var(--text2)" fontSize="9" fontFamily="Space Mono">COMPLIANCE</text>
+                            </svg>
                         </div>
-                    ))}
-                </div>
-            </FadeUp>
+                        {complianceChecks.map(({ ok, text }) => (
+                            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                                <span>{ok ? '✅' : '⚠️'}</span>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: ok ? 'var(--text2)' : '#f59e0b' }}>{text}</span>
+                            </div>
+                        ))}
+                    </div>
+                </FadeUp>
+            </div>
+            <div style={{ marginTop: 48 }}>
+                <TabImage src={TAB_IMAGES.Compliance} alt="Compliance documentation" height={240} />
+            </div>
         </div>
     );
 }
@@ -204,6 +290,10 @@ function TabCompliance() {
 function TabAnalytics() {
     return (
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            {/* Image banner at top for analytics */}
+            <div style={{ marginBottom: 40 }}>
+                <TabImage src={TAB_IMAGES.Analytics} alt="Analytics data dashboard" height={280} />
+            </div>
             <div className="features-grid" style={{ marginBottom: 40 }}>
                 {['Inventory Trend — Last 30 Days', 'District-wise Demand'].map((title, i) => (
                     <FadeUp key={title} delay={i * 0.1}>
@@ -235,11 +325,32 @@ function TabAnalytics() {
 
 function TabEmergency() {
     return (
-        <div style={{ maxWidth: 1400, margin: '0 auto', textAlign: 'center' }}>
-            <FadeUp>
-                <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(72px,14vw,160px)', color: 'var(--red)', lineHeight: 0.9, letterSpacing: '0.02em', marginBottom: 16 }}>{'< 8 MINUTES'}</h2>
-                <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 17, color: 'var(--text2)', marginBottom: 60 }}>Average emergency blood request response time across Kerala's HEM∆ network</p>
-            </FadeUp>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            {/* Split: giant stat left, image right */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 48,
+                marginBottom: 64,
+                alignItems: 'center',
+            }}>
+                <FadeUp>
+                    <h2 style={{
+                        fontFamily: 'var(--font-head)',
+                        fontSize: 'clamp(64px,10vw,130px)',
+                        color: 'var(--red)',
+                        lineHeight: 0.9,
+                        letterSpacing: '0.02em',
+                        marginBottom: 20,
+                    }}>
+                        {'< 8\nMIN'}
+                    </h2>
+                    <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 17, color: 'var(--text2)', maxWidth: 380, lineHeight: 1.7 }}>
+                        Average emergency blood request response time across Kerala's HEM∆ network
+                    </p>
+                </FadeUp>
+                <TabImage src={TAB_IMAGES.Emergency} alt="Emergency medical dispatch" height={320} />
+            </div>
             <div className="four-col">
                 {emergencySteps.map(({ num, icon, title, desc }, i) => (
                     <FadeUp key={num} delay={i * 0.1}>
@@ -259,11 +370,24 @@ function TabEmergency() {
 function TabIntegrations() {
     return (
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            {/* Header: text left, image right */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 48,
+                marginBottom: 60,
+                alignItems: 'center',
+            }}>
                 <FadeUp>
                     <MonoLabel>06 · INTEGRATIONS</MonoLabel>
-                    <h2 style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 'clamp(32px,4.5vw,48px)' }}>Connects to Your Existing Systems</h2>
+                    <h2 style={{ fontFamily: 'var(--font-sub)', fontWeight: 800, fontSize: 'clamp(32px,4.5vw,48px)', marginBottom: 16 }}>
+                        Connects to Your Existing Systems
+                    </h2>
+                    <p style={{ fontFamily: 'var(--font-body)', fontWeight: 300, fontSize: 16, color: 'var(--text2)', lineHeight: 1.8 }}>
+                        HEM∆ plugs into the software stack hospitals already use — no rip-and-replace. From FHIR APIs to on-premise RFID hardware.
+                    </p>
                 </FadeUp>
+                <TabImage src={TAB_IMAGES.Integrations} alt="Server network infrastructure" height={260} />
             </div>
             <div className="three-col" style={{ marginBottom: 40 }}>
                 {integrations.map(({ name, icon, status, desc }, i) => (
@@ -291,9 +415,55 @@ function TabIntegrations() {
 
 const tabContent = [TabInventory, TabDonors, TabCompliance, TabAnalytics, TabEmergency, TabIntegrations];
 
+function getDirection(next, prev) {
+    return next > prev ? 1 : -1;
+}
+
+const contentVariants = {
+    initial: (dir) => ({
+        opacity: 0,
+        x: dir * 48,
+        scale: 0.97,
+        filter: 'blur(4px)',
+    }),
+    animate: {
+        opacity: 1,
+        x: 0,
+        scale: 1,
+        filter: 'blur(0px)',
+        transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+    },
+    exit: (dir) => ({
+        opacity: 0,
+        x: dir * -32,
+        scale: 0.97,
+        filter: 'blur(4px)',
+        transition: { duration: 0.28, ease: [0.4, 0, 1, 1] },
+    }),
+};
+
 export default function FeaturesPage() {
     const [active, setActive] = useState(0);
+    const [direction, setDirection] = useState(1);
+    const tabsScrollRef = useRef(null);
+    const tabRefs = useRef([]);
     const ActiveTab = tabContent[active];
+
+    // Auto-scroll active tab button into view on narrow screens
+    useEffect(() => {
+        const container = tabsScrollRef.current;
+        const btn = tabRefs.current[active];
+        if (!container || !btn) return;
+        const cRect = container.getBoundingClientRect();
+        const bRect = btn.getBoundingClientRect();
+        const offset = bRect.left - cRect.left - cRect.width / 2 + bRect.width / 2;
+        container.scrollBy({ left: offset, behavior: 'smooth' });
+    }, [active]);
+
+    function handleTabClick(i) {
+        setDirection(getDirection(i, active));
+        setActive(i);
+    }
 
     return (
         <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -320,86 +490,182 @@ export default function FeaturesPage() {
                 </div>
             </section>
 
-            {/* STICKY TABS */}
+            {/* ─── STICKY TABS — centered ─── */}
             <div style={{
                 position: 'sticky',
                 top: 62,
                 zIndex: 400,
-                background: 'rgba(7,7,11,0.85)',
-                backdropFilter: 'blur(20px)',
+                background: 'rgba(7,7,11,0.92)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
                 borderBottom: '1px solid var(--border)',
-                padding: '12px 0'
             }}>
-                <div style={{
-                    maxWidth: 1400,
-                    margin: '0 auto',
-                    padding: '0 5%',
-                    display: 'flex',
-                    gap: 8,
-                    overflowX: 'auto',
-                    scrollbarWidth: 'none'
-                }}>
-                    {TABS.map((tab, i) => (
-                        <button
-                            key={tab.name}
-                            onClick={() => setActive(i)}
-                            style={{
-                                position: 'relative',
-                                fontFamily: 'var(--font-sub)',
-                                fontWeight: 700,
-                                fontSize: 13,
-                                textTransform: 'uppercase',
-                                padding: '12px 24px',
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                color: active === i ? '#fff' : 'var(--text2)',
-                                transition: 'color 0.3s ease',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                whiteSpace: 'nowrap',
-                                borderRadius: 100
-                            }}
-                        >
-                            {active === i && (
-                                <motion.div
-                                    layoutId="tab-pill"
-                                    style={{
-                                        position: 'absolute',
-                                        inset: 0,
-                                        background: 'var(--red)',
-                                        borderRadius: 100,
-                                        zIndex: -1
+                {/* Progress bar */}
+                <motion.div
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        height: 2,
+                        background: 'var(--red)',
+                        boxShadow: '0 0 14px rgba(217,0,37,0.8)',
+                    }}
+                    animate={{ width: `${((active + 1) / TABS.length) * 100}%` }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 36 }}
+                />
+
+                {/* Tab row — justify-content: center centers tabs on desktop */}
+                <div
+                    ref={tabsScrollRef}
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'center',   // ← centered
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '10px 5%',
+                        overflowX: 'auto',
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                        WebkitOverflowScrolling: 'touch',
+                        flexWrap: 'nowrap',
+                    }}
+                >
+                    {TABS.map((tab, i) => {
+                        const isActive = active === i;
+                        return (
+                            <motion.button
+                                key={tab.name}
+                                ref={el => tabRefs.current[i] = el}
+                                onClick={() => handleTabClick(i)}
+                                whileHover={{ scale: isActive ? 1 : 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                                style={{
+                                    position: 'relative',
+                                    fontFamily: 'var(--font-sub)',
+                                    fontWeight: 700,
+                                    fontSize: 13,
+                                    textTransform: 'uppercase',
+                                    padding: '10px 22px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: isActive ? '#fff' : 'var(--text2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    whiteSpace: 'nowrap',
+                                    borderRadius: 100,
+                                    letterSpacing: '0.04em',
+                                    outline: 'none',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                {/* Sliding pill */}
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="tab-pill"
+                                        style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            background: 'var(--red)',
+                                            borderRadius: 100,
+                                            zIndex: -1,
+                                        }}
+                                        transition={{ type: 'spring', stiffness: 380, damping: 32, mass: 0.9 }}
+                                    />
+                                )}
+
+                                {/* Hover ghost ring */}
+                                {!isActive && (
+                                    <motion.div
+                                        style={{
+                                            position: 'absolute', inset: 0,
+                                            borderRadius: 100,
+                                            border: '1px solid transparent',
+                                            zIndex: -1,
+                                        }}
+                                        whileHover={{
+                                            borderColor: 'rgba(217,0,37,0.35)',
+                                            background: 'rgba(217,0,37,0.07)',
+                                        }}
+                                        transition={{ duration: 0.18 }}
+                                    />
+                                )}
+
+                                {/* Icon bounce on activate */}
+                                <motion.span
+                                    animate={{
+                                        rotate: isActive ? [0, -12, 8, 0] : 0,
+                                        scale: isActive ? [1, 1.3, 1] : 1,
                                     }}
-                                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                                />
-                            )}
-                            <span style={{ opacity: active === i ? 1 : 0.6 }}>{tab.icon}</span>
-                            {tab.name}
-                        </button>
-                    ))}
+                                    transition={{ duration: 0.42, ease: 'easeOut' }}
+                                    style={{ display: 'flex', alignItems: 'center', opacity: isActive ? 1 : 0.55 }}
+                                >
+                                    {tab.icon}
+                                </motion.span>
+
+                                {/* Label slide-up */}
+                                <motion.span
+                                    animate={{ y: isActive ? [4, 0] : 0, opacity: isActive ? 1 : 0.7 }}
+                                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                >
+                                    {tab.name}
+                                </motion.span>
+
+                                {/* Active dot */}
+                                {isActive && (
+                                    <motion.span
+                                        layoutId="tab-dot"
+                                        style={{
+                                            position: 'absolute',
+                                            bottom: 3,
+                                            left: '50%',
+                                            transform: 'translateX(-50%)',
+                                            width: 3,
+                                            height: 3,
+                                            borderRadius: '50%',
+                                            background: 'rgba(255,255,255,0.8)',
+                                        }}
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ delay: 0.15, type: 'spring', stiffness: 500, damping: 25 }}
+                                    />
+                                )}
+                            </motion.button>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* TAB CONTENT */}
-            <section style={{ padding: 'var(--section-pad) 5%', background: 'var(--bg)', minHeight: 600 }}>
-                <AnimatePresence mode="wait">
+            {/* ─── TAB CONTENT ─── */}
+            <section style={{
+                padding: 'var(--section-pad) 5%',
+                background: 'var(--bg)',
+                minHeight: 600,
+                overflow: 'hidden',
+            }}>
+                <AnimatePresence mode="wait" custom={direction}>
                     <motion.div
                         key={active}
-                        initial={{ opacity: 0, x: 20, scale: 0.98 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: -20, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        custom={direction}
+                        variants={contentVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
                     >
                         <ActiveTab />
                     </motion.div>
                 </AnimatePresence>
             </section>
 
-            <CTABanner headline="SEE IT ALL IN ACTION" subtext="Book a 30-minute live demo with our Kerala team" btn1="Book Demo" btn2="View Pricing" />
+            <CTABanner
+                headline="SEE IT ALL IN ACTION"
+                subtext="Book a 30-minute live demo with our Kerala team"
+                btn1="Book Demo"
+                btn2="View Pricing"
+            />
             <Footer />
         </div>
     );
 }
-
