@@ -13,7 +13,7 @@ router.post('/', (req, res) => {
     const query = `
         INSERT INTO blood_request 
         (hospital_id, patient_id, bank_id, request_date, units_required, status)
-        VALUES (?, ?, ?, CURDATE(), ?, 'Pending')
+        VALUES (?, ?, ?, CURDATE(), ?, 'pending')
     `;
 
     db.query(
@@ -23,9 +23,7 @@ router.post('/', (req, res) => {
 
             if (err) {
                 console.error("POST ERROR:", err);
-                return res.status(500).json({
-                    message: "Server Error"
-                });
+                return res.status(500).json({ message: "Server Error" });
             }
 
             res.status(201).json({
@@ -38,7 +36,7 @@ router.post('/', (req, res) => {
 
 
 // =============================
-// GET ALL BLOOD REQUESTS (FINAL ✅)
+// GET ALL BLOOD REQUESTS
 // =============================
 router.get('/', (req, res) => {
 
@@ -71,9 +69,7 @@ router.get('/', (req, res) => {
 
         if (err) {
             console.error("GET ERROR:", err);
-            return res.status(500).json({
-                message: "Server Error"
-            });
+            return res.status(500).json({ message: "Server Error" });
         }
 
         res.json(results);
@@ -82,7 +78,7 @@ router.get('/', (req, res) => {
 
 
 // =============================
-// UPDATE REQUEST STATUS
+// UPDATE REQUEST STATUS (MAIN ROUTE ✅)
 // =============================
 router.put('/:id/status', (req, res) => {
 
@@ -95,20 +91,63 @@ router.put('/:id/status', (req, res) => {
         WHERE request_id = ?
     `;
 
-    db.query(query, [status, requestId], (err, result) => {
+    db.query(query, [status.toLowerCase(), requestId], (err) => {
 
         if (err) {
             console.error("UPDATE ERROR:", err);
-            return res.status(500).json({
-                message: "Server Error"
-            });
+            return res.status(500).json({ message: "Server Error" });
         }
 
         res.json({
-            message: "Request status updated successfully"
+            message: `Request ${status} successfully`
         });
     });
+});
 
+
+// =============================
+// OPTIONAL: QUICK APPROVE ROUTE
+// =============================
+router.put('/approve/:id', (req, res) => {
+
+    const requestId = req.params.id;
+
+    db.query(
+        "UPDATE blood_request SET status='approved' WHERE request_id=?",
+        [requestId],
+        (err) => {
+
+            if (err) {
+                console.error("APPROVE ERROR:", err);
+                return res.status(500).json({ message: "Server Error" });
+            }
+
+            res.json({ message: "Approved successfully" });
+        }
+    );
+});
+
+
+// =============================
+// OPTIONAL: QUICK REJECT ROUTE
+// =============================
+router.put('/reject/:id', (req, res) => {
+
+    const requestId = req.params.id;
+
+    db.query(
+        "UPDATE blood_request SET status='rejected' WHERE request_id=?",
+        [requestId],
+        (err) => {
+
+            if (err) {
+                console.error("REJECT ERROR:", err);
+                return res.status(500).json({ message: "Server Error" });
+            }
+
+            res.json({ message: "Rejected successfully" });
+        }
+    );
 });
 
 
