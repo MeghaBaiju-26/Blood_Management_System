@@ -105,7 +105,7 @@ export default function HospitalDashboard() {
                 const [statsRes, patientsRes, requestsRes, paymentsRes, banksRes] = await Promise.all([
                     fetch("http://localhost:5000/hospital-dashboard/1/stats"),
                     fetch("http://localhost:5000/patients"),
-                    fetch("http://localhost:5000/blood-requests/detailed"),
+                    fetch("http://localhost:5000/blood-requests/detailed/1"),
                     fetch("http://localhost:5000/payments"),
                     fetch("http://localhost:5000/blood-banks")
                 ]);
@@ -130,16 +130,16 @@ export default function HospitalDashboard() {
                 setMockPatients(formattedPatients);
 
                 const formattedRequests = (requestsData || []).map(r => ({
-                    request_id: r.request_id,
-                    request_date: r.request_date,
-                    patient_name: r.patient_name || "Patient",
-                    ward: r.ward || "Ward",
-                    blood_group: r.blood_group,
-                    units_required: r.units_required,
-                    bank_name: r.bank_name || "Blood Bank",
-                    priority: r.priority || "Normal",
-                    status: r.status
-                }));
+    request_id: r.request_id,
+    request_date: r.request_date,
+    patient_name: "Patient " + r.patient_id, // temporary fix
+    ward: "Ward",
+    blood_group: r.blood_group,
+    units_required: r.units_required,
+    bank_name: "Bank " + r.bank_id, // temporary fix
+    priority: r.priority || "Normal",
+    status: r.status
+}));
                 setMockBloodRequests(formattedRequests);
 
                 const demand = {};
