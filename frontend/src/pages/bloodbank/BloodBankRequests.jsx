@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, AlertTriangle } from 'lucide-react';
 import BloodBankLayout from '../../components/bloodbank/BloodBankLayout';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
 import PriorityBadge from '../../components/hospital/PriorityBadge';
 import StatusBadge from '../../components/hospital/StatusBadge';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
@@ -33,7 +34,7 @@ export default function BloodBankRequests() {
 
     if (loading) return (
         <BloodBankLayout title="Incoming Requests" page="REQUESTS">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: 13 }}>Loading requests...</div>
+            <BloodBankLoadingSkeleton showHero={false} showFilters cardCount={4} listRows={6} />
         </BloodBankLayout>
     );
     if (error) return (

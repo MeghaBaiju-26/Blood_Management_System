@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Droplets, Plus, X } from 'lucide-react';
 import HospitalLayout from '../../components/hospital/HospitalLayout';
 import StatusBadge from '../../components/hospital/StatusBadge';
 import HospitalLoadingSkeleton from '../../components/hospital/HospitalLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 const cardStyle = {
     background: '#0F0F17',
@@ -110,6 +113,7 @@ function NewRequestModal({
 
 export default function HospitalRequests() {
     const location = useLocation();
+    const { user } = useAuth();
     const selectedBank = location.state?.bank_id;
 
     const [requests, setRequests] = useState([]);
@@ -124,21 +128,23 @@ export default function HospitalRequests() {
     const [bloodGroup, setBloodGroup] = useState('');
     const [loading, setLoading] = useState(false);
 
-   const hospitalId = 1; // KIMS
+   const hospitalId = user?.entity_id;
 
 const fetchRequests = async () => {
-    const res = await fetch(`http://localhost:5000/blood-requests/detailed/${hospitalId}`);
+    const res = await apiFetch(`/blood-requests/detailed/${hospitalId}`);
     const data = await res.json();
     setRequests(Array.isArray(data) ? data : []);
 };
 
     const fetchPatients = async () => {
-        const res = await fetch('http://localhost:5000/patients');
+        const res = await apiFetch(`/patients/${hospitalId}`);
         const data = await res.json();
         setPatients(Array.isArray(data) ? data : []);
     };
 
     useEffect(() => {
+        if (!hospitalId) return;
+
         const load = async () => {
             try {
                 await Promise.all([fetchRequests(), fetchPatients()]);
@@ -150,7 +156,7 @@ const fetchRequests = async () => {
             }
         };
         load();
-    }, []);
+    }, [hospitalId]);
 
     useEffect(() => {
         if (selectedBank) {
@@ -166,17 +172,16 @@ const fetchRequests = async () => {
 
     const handleSubmit = async () => {
         if (!patientId || !bankId || !units) {
-            alert('Please fill all fields');
+            toast.error('Please fill all fields');
             return;
         }
 
         setLoading(true);
         try {
-            await fetch('http://localhost:5000/blood-requests', {
+            await apiFetch('/blood-requests', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    hospital_id: 1,
+                    hospital_id: hospitalId,
                     patient_id: parseInt(patientId, 10),
                     bank_id: parseInt(bankId, 10),
                     units_required: parseInt(units, 10)

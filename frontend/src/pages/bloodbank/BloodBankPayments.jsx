@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Search, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import BloodBankLayout from '../../components/bloodbank/BloodBankLayout';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
 import { getPayments, getPaymentTrend, markPaymentPaid } from '../../api/bloodBankApi';
 
 const PAY_TABS = ['All', 'Paid', 'Pending'];
@@ -30,7 +32,7 @@ export default function BloodBankPayments() {
 
     useEffect(() => { fetchAll(); }, []);
 
-    if (loading) return <BloodBankLayout title="Payments" page="PAYMENTS"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: 13 }}>Loading payments...</div></BloodBankLayout>;
+    if (loading) return <BloodBankLayout title="Payments" page="PAYMENTS"><BloodBankLoadingSkeleton showHero={false} cardCount={4} listRows={5} /></BloodBankLayout>;
     if (error) return <BloodBankLayout title="Payments" page="PAYMENTS"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--red)', fontSize: 13 }}>Error: {error}</div></BloodBankLayout>;
 
     const totalPaid = payments.filter(p => p.payment_status === 'Paid').reduce((s, p) => s + Number(p.amount), 0);
@@ -46,7 +48,8 @@ export default function BloodBankPayments() {
     const handleMarkPaid = (payId) => {
         markPaymentPaid(payId)
             .then(() => setPayments(prev => prev.map(p => p.payment_id === payId ? { ...p, payment_status: 'Paid' } : p)))
-            .catch(e => alert('Error: ' + e.message));
+            .then(() => toast.success('Payment marked as paid'))
+            .catch(e => toast.error('Error: ' + e.message));
     };
 
     return (

@@ -16,6 +16,8 @@ import StatusBadge from '../../components/hospital/StatusBadge';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
 import BloodAvailabilityBar from '../../components/hospital/BloodAvailabilityBar';
 import HospitalLoadingSkeleton from '../../components/hospital/HospitalLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 
 /* ─── KPI StatCard ─────────────────────────────────────────── */
@@ -72,6 +74,7 @@ async function readJsonSafe(res, fallbackMessage) {
 export default function HospitalDashboard() {
 
     const navigate = useNavigate();
+    const { user } = useAuth();
 
 
     /* ---------------- DASHBOARD STATS ---------------- */
@@ -100,14 +103,16 @@ export default function HospitalDashboard() {
     /* ---------------- FETCH DATA ---------------- */
 
     useEffect(() => {
+        if (!user?.entity_id) return;
+
         const load = async () => {
             try {
                 const [statsRes, patientsRes, requestsRes, paymentsRes, banksRes] = await Promise.all([
-                    fetch("http://localhost:5000/hospital-dashboard/1/stats"),
-                    fetch("http://localhost:5000/patients"),
-                    fetch("http://localhost:5000/blood-requests/detailed/1"),
-                    fetch("http://localhost:5000/payments"),
-                    fetch("http://localhost:5000/blood-banks")
+                    apiFetch(`/hospital-dashboard/${user.entity_id}/stats`),
+                    apiFetch(`/patients/${user.entity_id}`),
+                    apiFetch(`/blood-requests/detailed/${user.entity_id}`),
+                    apiFetch("/payments"),
+                    apiFetch("/blood-banks")
                 ]);
 
                 const statsData = await readJsonSafe(statsRes, 'Failed to load hospital stats');
@@ -182,7 +187,7 @@ export default function HospitalDashboard() {
             }
         };
         load();
-    }, []);
+    }, [user?.entity_id]);
 
 
 

@@ -5,6 +5,7 @@ import {
     Calendar, MapPin, Users, User, Settings, LogOut, Building2,
 } from 'lucide-react';
 import { mockDonor } from '../../data/mockData';
+import { useAuth } from '../../auth/AuthContext';
 
 const initials = mockDonor.name.split(' ').map(n => n[0]).join('');
 
@@ -61,6 +62,7 @@ export { EligibilityBadge };
 
 export default function DonorSidebar() {
     const navigate = useNavigate();
+    const { signOut } = useAuth();
 
     return (
         <motion.aside
@@ -177,7 +179,7 @@ export default function DonorSidebar() {
                     </div>
                 </div>
                 <button
-                    onClick={() => navigate('/login')}
+                    onClick={async () => { await signOut(); navigate('/login'); }}
                     style={{
                         display: 'flex', alignItems: 'center', gap: 8,
                         background: 'none', border: 'none', cursor: 'pointer',

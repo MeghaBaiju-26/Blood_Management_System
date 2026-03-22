@@ -4,6 +4,7 @@ import { Search, Download } from 'lucide-react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import BloodBankLayout from '../../components/bloodbank/BloodBankLayout';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
 import { getDonations } from '../../api/bloodBankApi';
 
 const DATE_TABS = ['All', 'This Month', 'Last 3M', 'This Year'];
@@ -72,7 +73,7 @@ export default function BloodBankDonations() {
             .catch(err => { setError(err.message); setLoading(false); });
     }, []);
 
-    if (loading) return <BloodBankLayout title="Donations" page="DONATIONS"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: 13 }}>Loading donations...</div></BloodBankLayout>;
+    if (loading) return <BloodBankLayout title="Donations" page="DONATIONS"><BloodBankLoadingSkeleton showHero={false} cardCount={4} listRows={5} /></BloodBankLayout>;
     if (error) return <BloodBankLayout title="Donations" page="DONATIONS"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--red)', fontSize: 13 }}>Error: {error}</div></BloodBankLayout>;
 
     const totalVol = donations.reduce((s, d) => s + (d.quantity || 0), 0);

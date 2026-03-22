@@ -5,6 +5,8 @@ import { Calendar, Droplets, MapPin, HeartPulse } from 'lucide-react';
 import DonorLayout from '../../components/donor/DonorLayout';
 import { EligibilityBadge } from '../../components/donor/DonorSidebar';
 import DonorLoadingSkeleton from '../../components/donor/DonorLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 function fmt(dateStr) {
     if (!dateStr) return 'N/A';
@@ -24,11 +26,14 @@ const cardStyle = {
 
 export default function DonorDashboard() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [donor, setDonor] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('http://localhost:5000/donors/1')
+        if (!user?.entity_id) return;
+
+        apiFetch(`/donors/${user.entity_id}`)
             .then(async (res) => {
                 const data = await res.json();
                 if (!res.ok || !data || typeof data.name !== 'string') {
@@ -45,7 +50,7 @@ export default function DonorDashboard() {
                 setDonor(null);
                 setLoading(false);
             });
-    }, []);
+    }, [user?.entity_id]);
 
     if (loading) {
         return (

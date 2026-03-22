@@ -3,15 +3,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Search, Shield, Building2, Droplets, User, X, Copy, Check } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { apiFetch } from '../../services/http';
 
+const roleMeta = {
+    admin: { label: 'Admin', color: '#f59e0b', icon: Shield },
+    hospital: { label: 'Hospital', color: '#3b82f6', icon: Building2 },
+    blood_bank: { label: 'Blood Bank', color: '#22c55e', icon: Droplets },
+    donor: { label: 'Donor', color: '#D90025', icon: User },
+};
 
-const roleColors = { 'Super Admin': '#f59e0b', 'Hospital Admin': '#3b82f6', 'Blood Bank Admin': '#22c55e', 'Donor': '#D90025' };
-const roleIcons = { 'Super Admin': Shield, 'Hospital Admin': Building2, 'Blood Bank Admin': Droplets, 'Donor': User };
+function normalizeRole(role) {
+    const key = String(role || '').toLowerCase();
+    return roleMeta[key] ? key : 'donor';
+}
 
 
 function timeAgo(d) {
+    if (!d) return '-';
     const now = new Date();
     const past = new Date(d);
+    if (Number.isNaN(past.getTime())) return '-';
     const hrs = Math.round((now - past) / 3600000);
     if (hrs < 24) return `${hrs} hours ago`;
     return `${Math.round(hrs / 24)} days ago`;
@@ -20,11 +31,16 @@ function timeAgo(d) {
 export default function AdminUsers() {
     const [users, setUsers] = useState([]);
     useEffect(() => {
-    fetch("http://localhost:5000/api/users")
-        .then(res => res.json())
+    apiFetch("/api/users")
+        .then(async res => {
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || `Failed to fetch users (${res.status})`);
+            }
+            return res.json();
+        })
         .then(data => {
-            console.log("API DATA:", data);
-            setUsers(data);
+            setUsers(Array.isArray(data) ? data : []);
         })
         .catch(err => console.error(err));
 }, []);
@@ -34,23 +50,28 @@ export default function AdminUsers() {
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [toast, setToast] = useState(null);
     const filtered = users.filter(u => {
-        if (roleFilter !== 'All' && u.role !== roleFilter) return false;
-        if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
+        const roleKey = normalizeRole(u.role);
+        if (roleFilter !== 'All' && roleKey !== roleFilter) return false;
+
+        const name = String(u.name || '');
+        const email = String(u.email || '');
+        if (search && !name.toLowerCase().includes(search.toLowerCase()) && !email.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
     });
 
     const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
     const tempPw = 'H3m@' + Math.random().toString(36).slice(2, 8).toUpperCase();
-    const roleCounts = {
-    'Super Admin': 0,
-    'Hospital Admin': 0,
-    'Blood Bank Admin': 0,
-    'Donor': 0
+const roleCounts = {
+    admin: 0,
+    hospital: 0,
+    blood_bank: 0,
+    donor: 0
 };
 
 users.forEach(u => {
-    if (roleCounts[u.role] !== undefined) {
-        roleCounts[u.role]++;
+    const roleKey = normalizeRole(u.role);
+    if (roleCounts[roleKey] !== undefined) {
+        roleCounts[roleKey]++;
     }
 });
 
@@ -117,10 +138,10 @@ const pieData = Object.entries(roleCounts).map(([name, value]) => ({ name, value
                             <input placeholder="email@example.com" style={{ width: '100%', background: '#0A0A12', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', fontFamily: 'var(--font-body)', fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box', marginBottom: 16 }} />
                             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>ROLE</div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
-                                {Object.entries(roleColors).map(([r, c]) => {
-                                    const Icon = roleIcons[r]; return (
-                                        <div key={r} style={{ background: '#0A0A12', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <Icon size={14} color={c} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#fff' }}>{r}</span>
+                                {Object.entries(roleMeta).map(([key, cfg]) => {
+                                    const Icon = cfg.icon; return (
+                                        <div key={key} style={{ background: '#0A0A12', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <Icon size={14} color={cfg.color} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#fff' }}>{cfg.label}</span>
                                         </div>
                                     );
                                 })}
@@ -137,7 +158,7 @@ const pieData = Object.entries(roleCounts).map(([name, value]) => ({ name, value
                     {[
  { l: 'TOTAL USERS', v: users.length },
  { l: 'ACTIVE TODAY', v: users.length, c: '#22c55e' },
- { l: 'SUPER ADMINS', v: users.filter(u => u.role === 'Super Admin').length, c: 'var(--red)' },
+ { l: 'ADMINS', v: users.filter(u => normalizeRole(u.role) === 'admin').length, c: 'var(--red)' },
  { l: 'PENDING INVITE', v: 0, c: '#f59e0b' }
 ].map(({ l, v, c }, i) => (
                         <motion.div key={l} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
@@ -155,14 +176,14 @@ const pieData = Object.entries(roleCounts).map(([name, value]) => ({ name, value
                     <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
                         <ResponsiveContainer width={200} height={200}>
                             <PieChart><Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={60} outerRadius={85} stroke="none">
-                                {pieData.map((entry, i) => <Cell key={entry.name} fill={roleColors[entry.name]} />)}
+                                {pieData.map((entry) => <Cell key={entry.name} fill={roleMeta[entry.name].color} />)}
                             </Pie></PieChart>
                         </ResponsiveContainer>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {pieData.map(e => (
                                 <div key={e.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <span style={{ width: 10, height: 10, borderRadius: 2, background: roleColors[e.name] }} />
-                                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#fff' }}>{e.name}</span>
+                                    <span style={{ width: 10, height: 10, borderRadius: 2, background: roleMeta[e.name].color }} />
+                                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#fff' }}>{roleMeta[e.name].label}</span>
                                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text3)' }}>{e.value}</span>
                                 </div>
                             ))}
@@ -179,7 +200,7 @@ const pieData = Object.entries(roleCounts).map(([name, value]) => ({ name, value
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    {['All', ...Object.keys(roleColors)].map(r => (
+                    {['All', ...Object.keys(roleMeta)].map(r => (
                         <button key={r} onClick={() => setRoleFilter(r)} style={{ background: roleFilter === r ? 'var(--red)' : 'rgba(255,255,255,0.05)', border: `1px solid ${roleFilter === r ? 'var(--red)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 100, padding: '5px 14px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11, color: roleFilter === r ? '#fff' : 'var(--text2)' }}>{r}</button>
                     ))}
                     <div style={{ flex: 1, position: 'relative' }}>
@@ -195,21 +216,27 @@ const pieData = Object.entries(roleCounts).map(([name, value]) => ({ name, value
                         {['#', 'NAME', 'EMAIL', 'ROLE', 'ORG', 'DISTRICT', 'ACTIVE', 'STATUS', 'ACTIONS'].map(h => <div key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', letterSpacing: '0.08em' }}>{h}</div>)}
                     </div>
                     {filtered.map((u, i) => {
-                        const RoleIcon = roleIcons[u.role]; const rc = roleColors[u.role]; const ini = u.name.split(' ').map(n => n[0]).join(''); return (
+                        const roleKey = normalizeRole(u.role);
+                        const roleCfg = roleMeta[roleKey] || roleMeta.donor;
+                        const RoleIcon = roleCfg.icon || User;
+                        const rc = roleCfg.color;
+                        const roleLabel = roleCfg.label;
+                        const ini = String(u.name || 'U').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2);
+                        return (
                             <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '30px 1fr 1fr 120px 1fr 100px 80px 60px 120px', gap: 10, alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}
                                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text3)' }}>{i + 1}</div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <div style={{ width: 30, height: 30, borderRadius: '50%', background: `${rc}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 11, color: rc, flexShrink: 0 }}>{ini}</div>
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 600, fontSize: 13, color: '#fff' }}>{u.name}</div>
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 600, fontSize: 13, color: '#fff' }}>{u.name || 'Unknown User'}</div>
                                 </div>
-                                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)' }}>{u.email}</div>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: `${rc}15`, border: `1px solid ${rc}40`, borderRadius: 100, padding: '2px 8px', fontFamily: 'var(--font-mono)', fontSize: 9, color: rc }}><RoleIcon size={10} />{u.role}</span>
+                                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)' }}>{u.email || '-'}</div>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: `${rc}15`, border: `1px solid ${rc}40`, borderRadius: 100, padding: '2px 8px', fontFamily: 'var(--font-mono)', fontSize: 9, color: rc }}><RoleIcon size={10} />{roleLabel}</span>
                                 <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)' }}>-</div>
                                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)' }}>-</div>
                                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)' }}>{timeAgo(u.created_at)}</div>
-                                <span style={{
+<span style={{
     background: 'rgba(34,197,94,0.1)',
     border: '1px solid rgba(34,197,94,0.25)',
     borderRadius: 100,
@@ -218,7 +245,7 @@ const pieData = Object.entries(roleCounts).map(([name, value]) => ({ name, value
     fontSize: 9,
     color: '#22c55e'
 }}>
-    {u.status?.toUpperCase()}
+    {String(u.status || 'active').toUpperCase()}
 </span>
                                 <div style={{ display: 'flex', gap: 6 }}>
                                     <button style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 10, color: 'var(--text3)' }}>Edit</button>

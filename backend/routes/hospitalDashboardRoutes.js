@@ -7,6 +7,13 @@ const db = require('../config/db');
 // GET HOSPITAL DASHBOARD STATS
 // =============================
 router.get('/:id/stats', (req, res) => {
+    if (!["hospital", "admin"].includes(req.auth.role)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (req.auth.role === "hospital" && Number(req.auth.entityId) !== Number(req.params.id)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
 
     const hospitalId = req.params.id;
 

@@ -4,6 +4,8 @@ import { Edit2, User, Phone, MapPin, Droplets, CalendarDays } from 'lucide-react
 import DonorLayout from '../../components/donor/DonorLayout';
 import { EligibilityBadge } from '../../components/donor/DonorSidebar';
 import DonorLoadingSkeleton from '../../components/donor/DonorLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -26,6 +28,7 @@ const panelStyle = {
 };
 
 export default function DonorProfile() {
+    const { user } = useAuth();
     const [tab, setTab] = useState(0);
     const [donor, setDonor] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -43,7 +46,9 @@ export default function DonorProfile() {
     const [saveError, setSaveError] = useState('');
 
     useEffect(() => {
-        fetch('http://localhost:5000/donors/1')
+        if (!user?.entity_id) return;
+
+        apiFetch(`/donors/${user.entity_id}`)
             .then(async (res) => {
                 const data = await res.json();
                 if (!res.ok || !data || typeof data.name !== 'string') {
@@ -71,7 +76,7 @@ export default function DonorProfile() {
                 setDonor(null);
                 setLoading(false);
             });
-    }, []);
+    }, [user?.entity_id]);
 
     const handleFieldChange = (field, value) => {
         setFormData((prev) => ({
@@ -85,7 +90,7 @@ export default function DonorProfile() {
         setSaveMessage('');
         setSaveError('');
 
-        const donorId = donor?.donor_id || 1;
+        const donorId = donor?.donor_id || user?.entity_id;
 
         try {
             const payload = {
@@ -98,11 +103,8 @@ export default function DonorProfile() {
                 last_donation_date: formData.last_donation_date || null
             };
 
-            const res = await fetch(`http://localhost:5000/donors/${donorId}/settings`, {
+            const res = await apiFetch(`/donors/${donorId}/settings`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify(payload)
             });
 

@@ -1,6 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const {
+  requireAuth,
+  requireRoles,
+  requireEntityOwnership,
+} = require("../middleware/authMiddleware");
+
+const protectBank = [
+  requireAuth,
+  requireRoles("blood_bank", "admin"),
+  requireEntityOwnership("id"),
+];
 
 // ─────────────────────────────────────────────
 // BLOOD BANK PROFILE
@@ -28,7 +39,7 @@ router.get("/:id", (req, res) => {
   );
 });
 
-router.put("/:id", (req, res) => {
+router.put("/:id", ...protectBank, (req, res) => {
   const { bank_name, city, contact_no } = req.body;
   db.query(
     "UPDATE blood_bank SET bank_name=?, city=?, contact_no=? WHERE bank_id=?",
@@ -46,7 +57,7 @@ router.put("/:id", (req, res) => {
 // PUT  /blood-banks/:id/stock/:group → update stock for a blood group
 // ─────────────────────────────────────────────
 
-router.get("/:id/stock", (req, res) => {
+router.get("/:id/stock", ...protectBank, (req, res) => {
   db.query(
     "SELECT * FROM blood_stock WHERE bank_id = ? ORDER BY blood_group",
     [req.params.id],
@@ -57,7 +68,7 @@ router.get("/:id/stock", (req, res) => {
   );
 });
 
-router.put("/:id/stock/:group", (req, res) => {
+router.put("/:id/stock/:group", ...protectBank, (req, res) => {
   const { available_units, action } = req.body;
   // action: 'add' or 'remove'
   const operator = action === "remove" ? "-" : "+";
@@ -91,7 +102,7 @@ router.put("/:id/stock/:group", (req, res) => {
 // Returns: stock, pending requests, recent donations, donor stats, payments
 // ─────────────────────────────────────────────
 
-router.get("/:id/dashboard", (req, res) => {
+router.get("/:id/dashboard", ...protectBank, (req, res) => {
   const bankId = req.params.id;
 
   const stockQ = "SELECT * FROM blood_stock WHERE bank_id = ?";
@@ -155,7 +166,7 @@ router.get("/:id/dashboard", (req, res) => {
 // POST /blood-banks/:id/donors          → register new donor
 // ─────────────────────────────────────────────
 
-router.get("/:id/donors", (req, res) => {
+router.get("/:id/donors", ...protectBank, (req, res) => {
   // All donors with their latest health check status
   db.query(
     `SELECT d.*,
@@ -171,7 +182,7 @@ router.get("/:id/donors", (req, res) => {
   );
 });
 
-router.post("/:id/donors", (req, res) => {
+router.post("/:id/donors", ...protectBank, (req, res) => {
   const { name, age, gender, phone_no, blood_group, city } = req.body;
   db.query(
     `INSERT INTO donor (name, age, gender, phone_no, blood_group, city, status)
@@ -190,7 +201,7 @@ router.post("/:id/donors", (req, res) => {
 // POST /blood-banks/:id/health-checks   → record a new health check
 // ─────────────────────────────────────────────
 
-router.get("/:id/health-checks", (req, res) => {
+router.get("/:id/health-checks", ...protectBank, (req, res) => {
   db.query(
     `SELECT hc.*, d.name AS donor_name, d.blood_group
      FROM health_check hc
@@ -206,7 +217,7 @@ router.get("/:id/health-checks", (req, res) => {
   );
 });
 
-router.post("/:id/health-checks", (req, res) => {
+router.post("/:id/health-checks", ...protectBank, (req, res) => {
   const { donor_id, check_date, weight, blood_pressure, hemoglobin, eligibility_status } = req.body;
   db.query(
     `INSERT INTO health_check (donor_id, check_date, weight, blood_pressure, hemoglobin, eligibility_status)
@@ -231,7 +242,7 @@ router.post("/:id/health-checks", (req, res) => {
 // POST /blood-banks/:id/donations       → record a new donation
 // ─────────────────────────────────────────────
 
-router.get("/:id/donations", (req, res) => {
+router.get("/:id/donations", ...protectBank, (req, res) => {
   db.query(
     `SELECT dr.*, d.name AS donor_name, d.blood_group,
             hc.weight, hc.hemoglobin, hc.blood_pressure, hc.eligibility_status
@@ -248,7 +259,7 @@ router.get("/:id/donations", (req, res) => {
   );
 });
 
-router.post("/:id/donations", (req, res) => {
+router.post("/:id/donations", ...protectBank, (req, res) => {
   const { donor_id, check_id, donation_date, quantity } = req.body;
   const bankId = req.params.id;
   db.query(
@@ -290,7 +301,7 @@ router.post("/:id/donations", (req, res) => {
 // PUT /blood-banks/:id/requests/:reqId  → update request status
 // ─────────────────────────────────────────────
 
-router.get("/:id/requests", (req, res) => {
+router.get("/:id/requests", ...protectBank, (req, res) => {
   db.query(
     `SELECT br.*, h.hospital_name, p.name AS patient_name, p.blood_group
      FROM blood_request br
@@ -306,7 +317,7 @@ router.get("/:id/requests", (req, res) => {
   );
 });
 
-router.put("/:id/requests/:reqId", (req, res) => {
+router.put("/:id/requests/:reqId", ...protectBank, (req, res) => {
   const { status } = req.body;
   db.query(
     "UPDATE blood_request SET status = ? WHERE request_id = ? AND bank_id = ?",
@@ -324,7 +335,7 @@ router.put("/:id/requests/:reqId", (req, res) => {
 // POST /blood-banks/:id/issues          → issue blood for a request
 // ─────────────────────────────────────────────
 
-router.get("/:id/issues", (req, res) => {
+router.get("/:id/issues", ...protectBank, (req, res) => {
   db.query(
     `SELECT bi.*, br.hospital_id, br.patient_id, br.units_required, br.bank_id,
             h.hospital_name, p.blood_group,
@@ -344,7 +355,7 @@ router.get("/:id/issues", (req, res) => {
   );
 });
 
-router.post("/:id/issues", (req, res) => {
+router.post("/:id/issues", ...protectBank, (req, res) => {
   const { request_id, issue_date, units_issued } = req.body;
   const bankId = req.params.id;
 
@@ -410,7 +421,7 @@ router.post("/:id/issues", (req, res) => {
 // PUT /blood-banks/:id/payments/:payId  → mark payment as paid
 // ─────────────────────────────────────────────
 
-router.get("/:id/payments", (req, res) => {
+router.get("/:id/payments", ...protectBank, (req, res) => {
   db.query(
     `SELECT py.*, h.hospital_name
      FROM payment py
@@ -425,7 +436,7 @@ router.get("/:id/payments", (req, res) => {
   );
 });
 
-router.put("/:id/payments/:payId", (req, res) => {
+router.put("/:id/payments/:payId", ...protectBank, (req, res) => {
   const { payment_status } = req.body;
   db.query(
     "UPDATE payment SET payment_status = ? WHERE payment_id = ? AND bank_id = ?",
@@ -442,7 +453,7 @@ router.put("/:id/payments/:payId", (req, res) => {
 // GET /blood-banks/:id/stock-trend
 // ─────────────────────────────────────────────
 
-router.get("/:id/stock-trend", (req, res) => {
+router.get("/:id/stock-trend", ...protectBank, (req, res) => {
   // Returns last 7 days of net stock movement per blood group
   // Since we don't store history, we return current stock shaped for the chart
   db.query(
@@ -472,7 +483,7 @@ router.get("/:id/stock-trend", (req, res) => {
 // GET /blood-banks/:id/payment-trend
 // ─────────────────────────────────────────────
 
-router.get("/:id/payment-trend", (req, res) => {
+router.get("/:id/payment-trend", ...protectBank, (req, res) => {
   db.query(
     `SELECT DATE_FORMAT(payment_date,'%b') as month,
             SUM(CASE WHEN payment_status='Paid' THEN amount ELSE 0 END) as received,

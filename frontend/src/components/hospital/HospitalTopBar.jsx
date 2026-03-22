@@ -1,14 +1,48 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bell, ChevronDown, AlertTriangle } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { mockHospital, mockBloodRequests } from '../../data/hospitalMockData';
+import { mockBloodRequests } from '../../data/hospitalMockData';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 import EmergencyRequestModal from './EmergencyRequestModal';
 
 const emergencyCount = mockBloodRequests.filter(r => r.priority === 'Emergency' && r.status === 'Pending').length;
-const initials = mockHospital.admin_name.split(' ').slice(0, 2).map(n => n[0]).join('');
 
 export default function HospitalTopBar({ title, page }) {
     const [showModal, setShowModal] = useState(false);
+    const [displayName, setDisplayName] = useState('');
+    const { user } = useAuth();
+
+    useEffect(() => {
+        let mounted = true;
+
+        if (!user?.entity_id) {
+            setDisplayName('');
+            return () => { mounted = false; };
+        }
+
+        apiFetch(`/hospitals/${user.entity_id}`)
+            .then(async (res) => {
+                const data = await res.json().catch(() => null);
+                if (!mounted || !res.ok || !data) return;
+
+                const hospitalName = typeof data.hospital_name === 'string' ? data.hospital_name.trim() : '';
+                if (hospitalName) {
+                    setDisplayName(hospitalName);
+                }
+            })
+            .catch(() => {});
+
+        return () => { mounted = false; };
+    }, [user?.entity_id]);
+
+    const nameToShow = displayName || user?.email || 'Hospital';
+    const firstName = nameToShow.split(' ').filter(Boolean)[0] || 'Hospital';
+    const initials = useMemo(() => {
+        const parts = nameToShow.split(' ').filter(Boolean);
+        if (!parts.length) return 'HS';
+        return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+    }, [nameToShow]);
 
     return (
         <>
@@ -73,7 +107,7 @@ export default function HospitalTopBar({ title, page }) {
                             {initials}
                         </div>
                         <span style={{ fontFamily: 'var(--font-sub)', fontWeight: 600, fontSize: 14, color: '#fff' }}>
-                            {mockHospital.admin_name.split(' ')[1]}
+                            {firstName}
                         </span>
                         <ChevronDown size={14} color="var(--text3)" />
                     </div>

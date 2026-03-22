@@ -5,6 +5,7 @@ import { Search, MapPin, Phone } from 'lucide-react';
 import HospitalLayout from '../../components/hospital/HospitalLayout';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
 import HospitalLoadingSkeleton from '../../components/hospital/HospitalLoadingSkeleton';
+import { apiFetch } from '../../services/http';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const DISTRICTS = ['All Districts', 'Thiruvananthapuram', 'Ernakulam', 'Kozhikode', 'Thrissur', 'Kannur'];
@@ -24,7 +25,7 @@ export default function HospitalBloodBanks() {
   // FETCH BANKS FROM BACKEND
   useEffect(() => {
 
-    fetch("http://localhost:5000/blood-banks")
+    apiFetch("/blood-banks")
       .then(res => res.json())
       .then(data => {
 

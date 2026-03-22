@@ -4,6 +4,8 @@ import { LayoutGrid, List, Search, X, Check } from 'lucide-react';
 import HospitalLayout from '../../components/hospital/HospitalLayout';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
 import HospitalLoadingSkeleton from '../../components/hospital/HospitalLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 const WARDS = ['All', 'Emergency', 'Surgery', 'Oncology', 'Maternity'];
 const STATUSES = ['All', 'Critical', 'Stable', 'Admitted'];
@@ -31,7 +33,7 @@ function fmt(d){
 }
 function initials(name){ return name?.split(' ').slice(0,2).map(n=>n[0]).join(''); }
 
-function AddPatientModal({ onClose, refreshPatients }){
+function AddPatientModal({ onClose, refreshPatients, hospitalId }){
 
 const [name,setName]=useState('');
 const [age,setAge]=useState('');
@@ -54,11 +56,10 @@ try{
 
 
 
-const res = await fetch("http://localhost:5000/patients", {
+const res = await apiFetch("/patients", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ 
-        hospital_id: 1,
+        hospital_id: hospitalId,
         name,
         age,
         gender,
@@ -161,6 +162,7 @@ style={{flex:2,background:'var(--red)',border:'none',borderRadius:10,padding:'12
 }
 
 export default function HospitalPatients(){
+const { user } = useAuth();
 
 const [view,setView]=useState('grid');
 const [ward,setWard]=useState('All');
@@ -171,13 +173,13 @@ const [patients,setPatients]=useState([]);
 const [loading,setLoading]=useState(true);
 const [error,setError]=useState('');
 
-useEffect(()=>{ fetchPatients(); },[]);
+useEffect(()=>{ fetchPatients(); },[user?.entity_id]);
 
 const fetchPatients = async () => {
 try{
-const hospitalId = 1;
+if (!user?.entity_id) return;
 
-const res = await fetch(`http://localhost:5000/patients/${hospitalId}`);
+const res = await apiFetch(`/patients/${user.entity_id}`);
 const data = await res.json();
 setPatients(data);
 setLoading(false);
@@ -208,7 +210,7 @@ return (
 return( <HospitalLayout title="Patients" page="PATIENTS">
 
  <AnimatePresence>
- {showModal && <AddPatientModal onClose={()=>setShowModal(false)} refreshPatients={fetchPatients}/>}
+ {showModal && <AddPatientModal hospitalId={user?.entity_id} onClose={()=>setShowModal(false)} refreshPatients={fetchPatients}/>}
  </AnimatePresence>
 
  <div style={{display:'flex',flexDirection:'column',gap:24}}>

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const { requireRoles } = require("../middleware/authMiddleware");
 
 const SETTINGS_FIELDS = {
   name: "name",
@@ -77,7 +78,7 @@ function buildSettingsUpdate(body) {
 }
 
 // 1️⃣ Get all donors
-router.get("/", (req, res) => {
+router.get("/", requireRoles("admin", "blood_bank"), (req, res) => {
   db.query("SELECT * FROM donor WHERE status = 'active'", (err, results) => {
     if (err) {
       console.error(err);
@@ -90,6 +91,10 @@ router.get("/", (req, res) => {
 
 // 2️⃣ Get single donor by ID  👈 ADD HERE
 router.get("/:id", (req, res) => {
+  if (req.auth.role === "donor" && Number(req.auth.entityId) !== Number(req.params.id)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
   const donorId = req.params.id;
 
   db.query(
@@ -112,6 +117,14 @@ router.get("/:id", (req, res) => {
 
 // Update donor settings
 router.patch("/:id/settings", async (req, res) => {
+  if (req.auth.role === "donor" && Number(req.auth.entityId) !== Number(req.params.id)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  if (!["donor", "admin"].includes(req.auth.role)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
   const donorId = req.params.id;
 
   let updatePayload;
@@ -156,7 +169,7 @@ router.patch("/:id/settings", async (req, res) => {
 });
 
 // 3️⃣ Add new donor
-router.post("/", (req, res) => {
+router.post("/", requireRoles("admin", "blood_bank"), (req, res) => {
   const { name, age, gender, phone_no, blood_group, last_donation_date, city } = req.body;
 
   const sql = `
@@ -179,7 +192,7 @@ router.post("/", (req, res) => {
   );
 });
 // Update donor
-router.put("/:id", (req, res) => {
+router.put("/:id", requireRoles("admin"), (req, res) => {
   const donorId = req.params.id;
   const { name, age, gender, phone_no, blood_group, last_donation_date, city } = req.body;
 
@@ -208,7 +221,7 @@ router.put("/:id", (req, res) => {
   );
 });
 // Soft delete donor (mark inactive)
-router.put("/deactivate/:id", (req, res) => {
+router.put("/deactivate/:id", requireRoles("admin"), (req, res) => {
   const donorId = req.params.id;
 
   db.query(

@@ -6,6 +6,8 @@ import AuthLayout from '../auth/AuthLayout';
 import AuthInput from '../auth/AuthInput';
 import AuthButton from '../auth/AuthButton';
 import CheckboxField from '../auth/CheckboxField';
+import { useAuth } from '../auth/AuthContext';
+import { getDefaultRouteByRole } from '../auth/session';
 
 // ── Role Definitions ──────────────────────────────────────────
 const ROLES = [
@@ -52,6 +54,7 @@ const fadeUp = (delay = 0) => ({
 export default function Login() {
     const navigate = useNavigate();
     const { search } = useLocation();
+    const { signIn } = useAuth();
     const queryRole = new URLSearchParams(search).get('role');
 
     const [selectedRole, setSelectedRole] = useState(ROLES[0]);
@@ -61,6 +64,8 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [errors, setErrors] = useState({});
+    const [authError, setAuthError] = useState('');
+    const [resolvedRole, setResolvedRole] = useState('');
 
     // Set role from query if present
     useEffect(() => {
@@ -70,31 +75,44 @@ export default function Login() {
         }
     }, [queryRole]);
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         const newErrors = {};
         if (!email) newErrors.email = 'Email is required';
         if (!password) newErrors.password = 'Password is required';
         if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
+
         setErrors({});
+        setAuthError('');
         setLoading(true);
-        setTimeout(() => { setLoading(false); setSuccess(true); }, 1500);
+
+        try {
+            const user = await signIn({
+                email,
+                password,
+            });
+            setResolvedRole(user.role);
+            setSuccess(true);
+        } catch (error) {
+            const message = error?.message || 'Login failed';
+            if (message.toLowerCase().includes('pending') || message.toLowerCase().includes('rejected')) {
+                navigate('/pending-approval');
+                return;
+            }
+            setAuthError(message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Actual redirection logic
     useEffect(() => {
         if (success) {
             const timer = setTimeout(() => {
-                const routes = {
-                    donor: '/donor/dashboard',
-                    hospital: '/hospital/dashboard',
-                    blood_bank: '/bloodbank/dashboard',
-                    admin: '/admin/dashboard',
-                };
-                navigate(routes[selectedRole.id] || '/');
+                navigate(getDefaultRouteByRole(resolvedRole || selectedRole.id));
             }, 2500);
             return () => clearTimeout(timer);
         }
-    }, [success, selectedRole, navigate]);
+    }, [success, selectedRole, navigate, resolvedRole]);
 
     if (success) {
         return (
@@ -187,6 +205,20 @@ export default function Login() {
                     Sign In →
                 </AuthButton>
             </motion.div>
+
+            {authError && (
+                <motion.div {...fadeUp(0.2)} style={{
+                    marginBottom: 14,
+                    border: '1px solid rgba(248,113,113,0.35)',
+                    background: 'rgba(248,113,113,0.08)',
+                    borderRadius: 10,
+                    color: '#f87171',
+                    padding: '10px 12px',
+                    fontSize: 13,
+                }}>
+                    {authError}
+                </motion.div>
+            )}
 
             <motion.div {...fadeUp(0.22)} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />

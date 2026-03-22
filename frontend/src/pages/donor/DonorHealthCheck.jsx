@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { HeartPulse, Activity, Droplets, Scale } from 'lucide-react';
 import DonorLayout from '../../components/donor/DonorLayout';
 import DonorLoadingSkeleton from '../../components/donor/DonorLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 function formatDate(dateStr) {
     if (!dateStr) return 'N/A';
@@ -36,12 +38,15 @@ const panelStyle = {
 };
 
 export default function DonorHealthCheck() {
+    const { user } = useAuth();
     const [checks, setChecks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        fetch('http://localhost:5000/health-checks/donor/1')
+        if (!user?.entity_id) return;
+
+        apiFetch(`/health-checks/donor/${user.entity_id}`)
             .then(async (res) => {
                 const data = await res.json();
                 if (!res.ok) {
@@ -61,7 +66,7 @@ export default function DonorHealthCheck() {
                 setError(err.message || 'Unable to load health checks');
                 setLoading(false);
             });
-    }, []);
+    }, [user?.entity_id]);
 
     if (loading) {
         return (

@@ -4,6 +4,8 @@ import { Edit2, Download, Building2 } from 'lucide-react';
 import HospitalLayout from '../../components/hospital/HospitalLayout';
 import { mockBloodRequests, mockPatients, mockHospitalBanks } from '../../data/hospitalMockData';
 import HospitalLoadingSkeleton from '../../components/hospital/HospitalLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 const TABS = ['Hospital Details', 'Account Settings'];
 const ALL_DEPTS = ['Emergency', 'Surgery', 'Oncology', 'Maternity', 'ICU', 'Radiology', 'Cardiology', 'Pediatrics'];
@@ -26,6 +28,7 @@ function InfoRow({ label, value }) {
 }
 
 export default function HospitalProfile() {
+    const { user } = useAuth();
 
     const [tab, setTab] = useState(0);
     const [editing, setEditing] = useState(false);
@@ -66,7 +69,9 @@ export default function HospitalProfile() {
 
             try {
 
-                const res = await fetch("http://localhost:5000/hospitals/1");
+                if (!user?.entity_id) return;
+
+                const res = await apiFetch(`/hospitals/${user.entity_id}`);
                 const data = await res.json();
 
                 setHospitalId(data.hospital_id);
@@ -89,7 +94,7 @@ export default function HospitalProfile() {
 
         loadHospital();
 
-    }, []);
+    }, [user?.entity_id]);
 
 
 
@@ -101,13 +106,9 @@ export default function HospitalProfile() {
 
         try {
 
-            const res = await fetch(`http://localhost:5000/hospitals/${hospitalId}`, {
+            const res = await apiFetch(`/hospitals/${hospitalId}`, {
 
                 method: "PUT",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
 
                 body: JSON.stringify({
                     hospital_name: name,

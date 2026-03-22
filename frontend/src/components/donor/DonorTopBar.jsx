@@ -1,12 +1,49 @@
 import { Bell, ChevronDown } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockDonor } from '../../data/mockData';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 import { EligibilityBadge } from './DonorSidebar';
-
-const initials = mockDonor.name.split(' ').map(n => n[0]).join('');
 
 export default function DonorTopBar({ title, page }) {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const [displayName, setDisplayName] = useState('');
+    const [donorStatus, setDonorStatus] = useState('active');
+
+    useEffect(() => {
+        let mounted = true;
+
+        if (!user?.entity_id) {
+            setDisplayName('');
+            return () => { mounted = false; };
+        }
+
+        apiFetch(`/donors/${user.entity_id}`)
+            .then(async (res) => {
+                const data = await res.json().catch(() => null);
+                if (!mounted || !res.ok || !data) return;
+
+                if (typeof data.name === 'string' && data.name.trim()) {
+                    setDisplayName(data.name.trim());
+                }
+                if (typeof data.status === 'string' && data.status.trim()) {
+                    setDonorStatus(data.status.trim().toLowerCase());
+                }
+            })
+            .catch(() => {});
+
+        return () => { mounted = false; };
+    }, [user?.entity_id]);
+
+    const nameToShow = displayName || user?.email || 'Donor';
+    const firstName = nameToShow.split(' ').filter(Boolean)[0] || 'Donor';
+    const initials = useMemo(() => {
+        const parts = nameToShow.split(' ').filter(Boolean);
+        if (!parts.length) return 'DN';
+        const chars = parts.slice(0, 2).map((part) => part[0]).join('');
+        return chars.toUpperCase();
+    }, [nameToShow]);
 
     return (
         <div style={{
@@ -44,7 +81,7 @@ export default function DonorTopBar({ title, page }) {
                 <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.08)' }} />
 
                 {/* Eligibility */}
-                <EligibilityBadge status={mockDonor.status} />
+                <EligibilityBadge status={donorStatus} />
 
                 {/* Divider */}
                 <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.08)' }} />
@@ -60,7 +97,7 @@ export default function DonorTopBar({ title, page }) {
                         {initials}
                     </div>
                     <span style={{ fontFamily: 'var(--font-sub)', fontWeight: 600, fontSize: 14, color: '#fff' }}>
-                        {mockDonor.name.split(' ')[0]}
+                        {firstName}
                     </span>
                     <ChevronDown size={14} color="var(--text3)" />
                 </div>

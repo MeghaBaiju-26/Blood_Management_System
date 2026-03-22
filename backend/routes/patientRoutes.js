@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const { requireRoles } = require("../middleware/authMiddleware");
 
 
 // =============================
 // GET ALL PATIENTS
 // =============================
-router.get("/", (req, res) => {
+router.get("/", requireRoles("admin"), (req, res) => {
 
   const query = `
     SELECT * FROM patient
@@ -33,6 +34,13 @@ router.get("/", (req, res) => {
 // GET PATIENTS BY HOSPITAL
 // =============================
 router.get("/:hospitalId", (req, res) => {
+  if (!["hospital", "admin"].includes(req.auth.role)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  if (req.auth.role === "hospital" && Number(req.auth.entityId) !== Number(req.params.hospitalId)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
 
   const hospitalId = req.params.hospitalId;
 
@@ -63,8 +71,16 @@ router.get("/:hospitalId", (req, res) => {
 // ADD NEW PATIENT
 // =============================
 router.post("/", (req, res) => {
+  if (!["hospital", "admin"].includes(req.auth.role)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
 
   const { hospital_id, name, age, gender, blood_group } = req.body;
+  const hospitalId = req.auth.role === "hospital" ? req.auth.entityId : hospital_id;
+
+  if (!hospitalId) {
+    return res.status(400).json({ message: "hospital_id is required" });
+  }
 
   const query = `
     INSERT INTO patient
@@ -74,7 +90,7 @@ router.post("/", (req, res) => {
 
   db.query(
     query,
-    [hospital_id, name, age, gender, blood_group],
+    [hospitalId, name, age, gender, blood_group],
     (err, result) => {
 
       if (err) {

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
+import { apiFetch } from '../../services/http';
 
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
@@ -26,9 +27,14 @@ useEffect(() => {
 }, []);
 const fetchBanks = async () => {
     try {
-        const res = await fetch("http://localhost:5000/api/admin/inventory")
+        const res = await apiFetch("/api/admin/inventory")
         const data = await res.json();
-        console.log("RAW DATA:", data);
+        if (!Array.isArray(data)) {
+            setBanks([]);
+            setStats({ totalUnits: 0, criticalTypes: 0, lowStock: 0, avgCapacity: 0 });
+            setLoading(false);
+            return;
+        }
         let totalUnits = 0;
 let criticalTypes = 0;
 let lowStock = 0;
@@ -71,21 +77,28 @@ data.forEach(row => {
             bank_name: row.bank_name,
             city: row.city,
             total_units: 0,
-            inventory: []
+            inventoryByGroup: {}
         };
     }
 
-    grouped[row.bank_id].inventory.push({
-        group: row.blood_group,
-        units: row.available_units,
-        capacity: 100,
-        updated: new Date().toISOString().split("T")[0]
-    });
+    if (!grouped[row.bank_id].inventoryByGroup[row.blood_group]) {
+        grouped[row.bank_id].inventoryByGroup[row.blood_group] = {
+            group: row.blood_group,
+            units: 0,
+            capacity: 100,
+            updated: new Date().toISOString().split("T")[0]
+        };
+    }
+
+    grouped[row.bank_id].inventoryByGroup[row.blood_group].units += row.available_units;
 
     grouped[row.bank_id].total_units += row.available_units;
 });
 
-setBanks(Object.values(grouped));
+setBanks(Object.values(grouped).map((bank) => ({
+    ...bank,
+    inventory: Object.values(bank.inventoryByGroup)
+})));
 setLoading(false);
     } catch (err) {
         console.error(err);
@@ -95,8 +108,12 @@ setLoading(false);
 
 const fetchDistricts = async () => {
     try {
-        const res = await fetch("http://localhost:5000/api/admin/inventory");
+        const res = await apiFetch("/api/admin/inventory");
         const data = await res.json();
+        if (!Array.isArray(data)) {
+            setDistrictData([]);
+            return;
+        }
 
 const districtMap = {};
 
@@ -199,7 +216,7 @@ setDistrictData(formatted);
                                         const stLabel = pct <= 30 ? 'Critical' : pct <= 60 ? 'Low' : 'Healthy';
                                         const stColor = pct <= 30 ? 'var(--red)' : pct <= 60 ? '#f59e0b' : '#22c55e';
                                         return (
-                                            <div key={st.group} style={{ display: 'grid', gridTemplateColumns: '80px 100px 80px 1fr 80px 100px', gap: 10, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                            <div key={`${b.bank_id}-${st.group}`} style={{ display: 'grid', gridTemplateColumns: '80px 100px 80px 1fr 80px 100px', gap: 10, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                                                 <BloodGroupBadge group={st.group} small />
                                                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: '#fff' }}>{st.units}</div>
                                                 <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)' }}>{st.capacity}</div>
