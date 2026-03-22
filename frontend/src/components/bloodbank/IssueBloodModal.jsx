@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { X, Check } from 'lucide-react';
 import BloodGroupBadge from '../hospital/BloodGroupBadge';
 import BloodAvailabilityBar from '../hospital/BloodAvailabilityBar';
-import { issueBlood, getStock, BANK_ID } from '../../api/bloodBankApi';
+import { issueBlood, getStock } from '../../api/bloodBankApi';
 
 export default function IssueBloodModal({ onClose, request }) {
     const [units, setUnits] = useState(request?.units_required || 1);

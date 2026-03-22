@@ -4,6 +4,7 @@ import { Search, Download } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import StatusBadge from '../../components/hospital/StatusBadge';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
+import { apiFetch } from '../../services/http';
 
 function fmt(d) {
     return new Date(d).toLocaleDateString('en-IN', {
@@ -17,37 +18,49 @@ export default function AdminRequests() {
     const [requests, setRequests] = useState([]);
     const [tab, setTab] = useState('All');
     const [search, setSearch] = useState('');
+    const [error, setError] = useState('');
 
     // 🔥 FETCH DATA
    useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/admin/requests")
+    apiFetch("/admin/requests")
         .then(res => res.json())
         .then(data => {
-            console.log("DATA:", data);
+            if (!Array.isArray(data)) {
+                setError(data?.message || 'Failed to load requests');
+                setRequests([]);
+                return;
+            }
+            setError('');
             setRequests(data);
         })
-        .catch(err => console.error("ERROR:", err));
+        .catch(err => {
+            console.error("ERROR:", err);
+            setError('Failed to load requests');
+            setRequests([]);
+        });
 }, []);
+
+    const requestList = Array.isArray(requests) ? requests : [];
 
     // 🔥 FORMAT STATUS (IMPORTANT)
     const formatStatus = (status) =>
         status?.charAt(0).toUpperCase() + status?.slice(1);
 
     // 🔥 STATS
-    const fulfilled = requests.filter(r =>
+    const fulfilled = requestList.filter(r =>
         r.status?.toLowerCase() === 'approved'
     ).length;
 
-    const pending = requests.filter(r =>
+    const pending = requestList.filter(r =>
         r.status?.toLowerCase() === 'pending'
     ).length;
 
-    const rate = requests.length
-        ? ((fulfilled / requests.length) * 100).toFixed(1)
+    const rate = requestList.length
+        ? ((fulfilled / requestList.length) * 100).toFixed(1)
         : 0;
 
     // 🔥 FILTER
-    const filtered = requests.filter(r => {
+    const filtered = requestList.filter(r => {
 
         // status filter (case-insensitive)
         if (tab !== 'All' && r.status?.toLowerCase() !== tab.toLowerCase())
@@ -67,11 +80,22 @@ export default function AdminRequests() {
         <AdminLayout title="Blood Requests" page="REQUESTS">
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {error && (
+                    <div style={{
+                        background: '#0F0F17',
+                        border: '1px solid rgba(248,113,113,0.28)',
+                        borderRadius: 14,
+                        padding: 14,
+                        color: '#f87171'
+                    }}>
+                        {error}
+                    </div>
+                )}
 
                 {/* KPI */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
                     {[
-                        { l: 'TOTAL', v: requests.length },
+                        { l: 'TOTAL', v: requestList.length },
                         { l: 'PENDING', v: pending, c: 'var(--red)' },
                         { l: 'APPROVED', v: fulfilled, c: '#22c55e' },
                         { l: 'RATE', v: `${rate}%` }

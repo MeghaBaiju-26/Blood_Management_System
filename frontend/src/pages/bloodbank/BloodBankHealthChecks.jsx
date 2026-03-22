@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Check } from 'lucide-react';
 import BloodBankLayout from '../../components/bloodbank/BloodBankLayout';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
 import { getHealthChecks, getDonors, createHealthCheck } from '../../api/bloodBankApi';
 
 const RESULT_TABS = ['All', 'Eligible', 'Deferred'];
@@ -106,7 +107,7 @@ export default function BloodBankHealthChecks() {
 
     useEffect(() => { fetchAll(); }, []);
 
-    if (loading) return <BloodBankLayout title="Health Checks" page="HEALTH-CHECKS"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: 13 }}>Loading...</div></BloodBankLayout>;
+    if (loading) return <BloodBankLayout title="Health Checks" page="HEALTH-CHECKS"><BloodBankLoadingSkeleton showHero={false} showFilters cardCount={4} listRows={6} /></BloodBankLayout>;
     if (error) return <BloodBankLayout title="Health Checks" page="HEALTH-CHECKS"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--red)', fontSize: 13 }}>Error: {error}</div></BloodBankLayout>;
 
     const eligibleCount = healthChecks.filter(h => h.eligibility_status === 'Eligible').length;

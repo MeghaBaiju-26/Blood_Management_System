@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const { requireRoles } = require("../middleware/authMiddleware");
 
 // ==========================
 // GET ALL HOSPITALS (WITH PATIENT COUNT) ✅
 // ==========================
-router.get("/", (req, res) => {
+router.get("/", requireRoles("admin"), (req, res) => {
 
     const query = `
         SELECT 
@@ -34,6 +35,14 @@ router.get("/", (req, res) => {
 // GET SINGLE HOSPITAL ✅
 // ==========================
 router.get("/:id", (req, res) => {
+    if (req.auth.role === "hospital" && Number(req.auth.entityId) !== Number(req.params.id)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (!["hospital", "admin"].includes(req.auth.role)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+
 
     const hospitalId = req.params.id;
 
@@ -63,7 +72,7 @@ router.get("/:id", (req, res) => {
 // ==========================
 // ADD HOSPITAL ✅
 // ==========================
-router.post("/", (req, res) => {
+router.post("/", requireRoles("admin"), (req, res) => {
 
     const { hospital_name, city, contact_no } = req.body;
 
@@ -92,6 +101,14 @@ router.post("/", (req, res) => {
 // UPDATE HOSPITAL ✅
 // ==========================
 router.put("/:id", (req, res) => {
+    if (req.auth.role === "hospital" && Number(req.auth.entityId) !== Number(req.params.id)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (!["hospital", "admin"].includes(req.auth.role)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+
 
     const hospitalId = req.params.id;
     const { hospital_name, city, contact_no } = req.body;
@@ -128,7 +145,7 @@ router.put("/:id", (req, res) => {
 // ==========================
 // DELETE HOSPITAL ✅
 // ==========================
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireRoles("admin"), (req, res) => {
 
     const hospitalId = req.params.id;
 

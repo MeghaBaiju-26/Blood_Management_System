@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Droplets, Edit2, Download } from 'lucide-react';
 import BloodBankLayout from '../../components/bloodbank/BloodBankLayout';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
+import { getAuthUser } from '../../auth/session';
+import { apiFetch } from '../../services/http';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const DISTRICTS = ['Thiruvananthapuram', 'Ernakulam', 'Thrissur', 'Kozhikode', 'Palakkad', 'Alappuzha'];
@@ -31,6 +35,7 @@ function Toggle({ on, onToggle }) {
 }
 
 export default function BloodBankProfile() {
+    const bankId = getAuthUser()?.entity_id;
     const [tab, setTab] = useState('details');
     const [editable, setEditable] = useState(false);
    const [form, setForm] = useState({
@@ -45,9 +50,7 @@ export default function BloodBankProfile() {
 useEffect(() => {
     const fetchProfile = async () => {
         try {
-            const bankId = localStorage.getItem("bank_id");
-
-            const res = await fetch(`http://localhost:5000/blood-banks/${bankId}`);
+            const res = await apiFetch(`/blood-banks/${bankId}`);
             const data = await res.json();
 
             setForm({
@@ -68,7 +71,7 @@ useEffect(() => {
     };
 
     fetchProfile();
-}, []);
+}, [bankId]);
     const [savedOk, setSavedOk] = useState(false);
     const [notifs, setNotifs] = useState(NOTIFS.reduce((o, n) => ({ ...o, [n.id]: n.val }), {}));
     const [selectedTypes, setSelectedTypes] = useState(BLOOD_TYPES);
@@ -76,15 +79,10 @@ useEffect(() => {
 
     const toggleType = (t) => setSelectedTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
 
-    const handleSave = async () => {
+const handleSave = async () => {
     try {
-        const bankId = localStorage.getItem("bank_id");
-
-        const response = await fetch(`http://localhost:5000/blood-banks/${bankId}`, {
+        const response = await apiFetch(`/blood-banks/${bankId}`, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
             body: JSON.stringify({
                 bank_name: form.bank_name,
                 city: form.city,
@@ -97,21 +95,20 @@ useEffect(() => {
         if (response.ok) {
             setSavedOk(true);
             setEditable(false);
+            toast.success('Profile updated successfully');
             setTimeout(() => setSavedOk(false), 2000);
         } else {
-            alert(data.message);
+            toast.error(data.message || 'Update failed');
         }
 
     } catch (err) {
         console.error(err);
-        alert("Update failed");
+        toast.error('Update failed');
     }
 };
     const iS = (disabled = false) => ({ width: '100%', background: disabled ? '#07070B' : '#0A0A12', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', fontFamily: 'var(--font-body)', fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box', cursor: disabled ? 'default' : 'text', opacity: disabled ? 0.6 : 1 });
     const lS = { display: 'block', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8, marginTop: 18 };
-    if (loading) {
-    return <div style={{ color: 'white', padding: '20px' }}>Loading...</div>;
-}
+    if (loading) return <BloodBankLayout title="Profile" page="PROFILE"><BloodBankLoadingSkeleton showHero cardCount={2} listRows={4} /></BloodBankLayout>;
     return (
         <BloodBankLayout title="Profile" page="PROFILE">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -127,7 +124,7 @@ useEffect(() => {
                             {['BLOOD BANK', form.city].map(l => <span key={l} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 100, padding: '2px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)' }}>{l}</span>)}
                             <span style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 100, padding: '2px 10px', fontFamily: 'var(--font-mono)', fontSize: 9, color: '#22c55e' }}>NACO VERIFIED</span>
                         </div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text3)' }}>ID: {localStorage.getItem("bank_id")} · Cap: {form.storage_capacity} units · Kerala</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text3)' }}>ID: {bankId} · Cap: {form.storage_capacity} units · Kerala</div>
                     </div>
                     <button onClick={() => setEditable(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', borderRadius: 10, padding: '10px 18px', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text2)', transition: 'border-color 0.15s' }}
                         onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(217,0,37,0.4)'}
@@ -166,7 +163,7 @@ useEffect(() => {
                         <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} style={{ background: '#0F0F17', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, padding: 28 }}>
                             <div style={{ fontFamily: 'var(--font-sub)', fontWeight: 700, fontSize: 18, color: '#fff', marginBottom: 20 }}>Bank Summary</div>
                             {[
-    ['BANK ID', localStorage.getItem("bank_id")],
+    ['BANK ID', bankId],
     ['CITY', form.city],
     ['NACO NUMBER', form.naco_number],
     ['STORAGE CAPACITY', `${form.storage_capacity} units`],

@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Lege
 import HospitalLayout from '../../components/hospital/HospitalLayout';
 import StatusBadge from '../../components/hospital/StatusBadge';
 import HospitalLoadingSkeleton from '../../components/hospital/HospitalLoadingSkeleton';
+import { apiFetch } from '../../services/http';
 
 function fmt(d) { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
@@ -57,7 +58,7 @@ export default function HospitalPayments() {
 
     useEffect(() => {
 
-        fetch("http://localhost:5000/payments")
+        apiFetch("/payments")
             .then(res => readJsonSafe(res, 'Failed to load payments'))
             .then(data => {
 

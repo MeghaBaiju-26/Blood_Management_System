@@ -4,6 +4,8 @@ import { AreaChart, Area, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } f
 import { Droplets, Building2, CalendarDays } from 'lucide-react';
 import DonorLayout from '../../components/donor/DonorLayout';
 import DonorLoadingSkeleton from '../../components/donor/DonorLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 function fmt(dateStr) {
     if (!dateStr) return 'N/A';
@@ -38,12 +40,15 @@ const panelStyle = {
 };
 
 export default function DonorDonations() {
+    const { user } = useAuth();
     const [donations, setDonations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        fetch('http://localhost:5000/donations/donor/1')
+        if (!user?.entity_id) return;
+
+        apiFetch(`/donations/donor/${user.entity_id}`)
             .then(async (res) => {
                 const data = await res.json();
                 if (!res.ok) {
@@ -63,7 +68,7 @@ export default function DonorDonations() {
                 setError(err.message || 'Unable to load donations');
                 setLoading(false);
             });
-    }, []);
+    }, [user?.entity_id]);
 
     if (loading) {
         return (

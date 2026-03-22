@@ -7,9 +7,11 @@ import {
     CreditCard, User, Settings, LogOut,
 } from 'lucide-react';
 import { getDashboard, getBloodBank } from '../../api/bloodBankApi';
+import { useAuth } from '../../auth/AuthContext';
 
 export default function BloodBankSidebar() {
     const navigate = useNavigate();
+    const { signOut } = useAuth();
     const [totalUnits, setTotalUnits] = useState(0);
     const [pendingRequests, setPendingRequests] = useState(0);
     const [emergencyCount, setEmergencyCount] = useState(0);
@@ -137,7 +139,7 @@ export default function BloodBankSidebar() {
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>NACO REG</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#fff' }}>{nacoNumber}</div>
                 </div>
-                <button onClick={() => navigate('/login')}
+                <button onClick={async () => { await signOut(); navigate('/login'); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)', padding: 0 }}
                     onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
                     onMouseLeave={e => e.currentTarget.style.color = 'var(--text3)'}

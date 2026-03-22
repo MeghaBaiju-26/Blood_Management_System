@@ -7,6 +7,7 @@ import {
     Shield, LogOut,
 } from 'lucide-react';
 import { mockPendingApprovals, mockSystemStats, mockAllDonors, mockAllHospitals, mockAllBloodBanks } from '../../data/adminMockData';
+import { useAuth } from '../../auth/AuthContext';
 
 const pendingCount = mockPendingApprovals.filter(a => a.status === 'Pending').length;
 
@@ -55,6 +56,7 @@ const NAV = [
 
 export default function AdminSidebar() {
     const navigate = useNavigate();
+    const { signOut } = useAuth();
     return (
         <motion.aside
             initial={{ x: -240, opacity: 0 }}
@@ -125,7 +127,7 @@ export default function AdminSidebar() {
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#22c55e' }}>All services online</span>
                     </div>
                 </div>
-                <button onClick={() => navigate('/login')}
+                <button onClick={async () => { await signOut(); navigate('/login'); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)', padding: 0 }}
                     onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
                     onMouseLeave={e => e.currentTarget.style.color = 'var(--text3)'}

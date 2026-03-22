@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './auth/AuthContext';
+import { getDefaultRouteByRole } from './auth/session';
 
 // Landing pages
 import LandingPage from './pages/LandingPage';
@@ -60,6 +62,31 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminAudit from './pages/admin/AdminAudit';
 import AdminSettings from './pages/admin/AdminSettings';
 
+function ProtectedRoute({ roles, children }) {
+    const { isAuthenticated, loading, user } = useAuth();
+
+    if (loading) return null;
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (roles?.length && !roles.includes(user?.role)) {
+        return <Navigate to={getDefaultRouteByRole(user?.role)} replace />;
+    }
+
+    return children;
+}
+
+function PublicOnlyRoute({ children }) {
+    const { isAuthenticated, loading, user } = useAuth();
+    if (loading) return null;
+    if (isAuthenticated) {
+        return <Navigate to={getDefaultRouteByRole(user?.role)} replace />;
+    }
+    return children;
+}
+
 export default function App() {
     return (
         <BrowserRouter>
@@ -73,59 +100,59 @@ export default function App() {
                 <Route path="/contact" element={<ContactPage />} />
 
                 {/* Auth */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+                <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/verify-otp" element={<VerifyOTP />} />
                 <Route path="/pending-approval" element={<PendingApproval />} />
 
                 {/* Donor Portal */}
-                <Route path="/donor/dashboard" element={<DonorDashboard />} />
-                <Route path="/donor/donations" element={<DonorDonations />} />
-                <Route path="/donor/health-check" element={<DonorHealthCheck />} />
-                <Route path="/donor/schedule" element={<DonorSchedule />} />
-                <Route path="/donor/find-bank" element={<DonorFindBank />} />
-                <Route path="/donor/profile" element={<DonorProfile />} />
-                <Route path="/donor/notifications" element={<DonorDashboard />} />
+                <Route path="/donor/dashboard" element={<ProtectedRoute roles={['donor']}><DonorDashboard /></ProtectedRoute>} />
+                <Route path="/donor/donations" element={<ProtectedRoute roles={['donor']}><DonorDonations /></ProtectedRoute>} />
+                <Route path="/donor/health-check" element={<ProtectedRoute roles={['donor']}><DonorHealthCheck /></ProtectedRoute>} />
+                <Route path="/donor/schedule" element={<ProtectedRoute roles={['donor']}><DonorSchedule /></ProtectedRoute>} />
+                <Route path="/donor/find-bank" element={<ProtectedRoute roles={['donor']}><DonorFindBank /></ProtectedRoute>} />
+                <Route path="/donor/profile" element={<ProtectedRoute roles={['donor']}><DonorProfile /></ProtectedRoute>} />
+                <Route path="/donor/notifications" element={<ProtectedRoute roles={['donor']}><DonorDashboard /></ProtectedRoute>} />
 
                 {/* Hospital Portal */}
-                <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
-                <Route path="/hospital/requests" element={<HospitalRequests />} />
-                <Route path="/hospital/patients" element={<HospitalPatients />} />
-                <Route path="/hospital/payments" element={<HospitalPayments />} />
-                <Route path="/hospital/blood-banks" element={<HospitalBloodBanks />} />
-                <Route path="/hospital/profile" element={<HospitalProfile />} />
-                <Route path="/hospital/notifications" element={<HospitalDashboard />} />
+                <Route path="/hospital/dashboard" element={<ProtectedRoute roles={['hospital']}><HospitalDashboard /></ProtectedRoute>} />
+                <Route path="/hospital/requests" element={<ProtectedRoute roles={['hospital']}><HospitalRequests /></ProtectedRoute>} />
+                <Route path="/hospital/patients" element={<ProtectedRoute roles={['hospital']}><HospitalPatients /></ProtectedRoute>} />
+                <Route path="/hospital/payments" element={<ProtectedRoute roles={['hospital']}><HospitalPayments /></ProtectedRoute>} />
+                <Route path="/hospital/blood-banks" element={<ProtectedRoute roles={['hospital']}><HospitalBloodBanks /></ProtectedRoute>} />
+                <Route path="/hospital/profile" element={<ProtectedRoute roles={['hospital']}><HospitalProfile /></ProtectedRoute>} />
+                <Route path="/hospital/notifications" element={<ProtectedRoute roles={['hospital']}><HospitalDashboard /></ProtectedRoute>} />
 
                 {/* Blood Bank Portal */}
-                <Route path="/bloodbank/dashboard" element={<BloodBankDashboard />} />
-                <Route path="/bloodbank/inventory" element={<BloodBankInventory />} />
-                <Route path="/bloodbank/donations" element={<BloodBankDonations />} />
-                <Route path="/bloodbank/donors" element={<BloodBankDonors />} />
-                <Route path="/bloodbank/health-checks" element={<BloodBankHealthChecks />} />
-                <Route path="/bloodbank/requests" element={<BloodBankRequests />} />
-                <Route path="/bloodbank/issues" element={<BloodBankIssues />} />
-                <Route path="/bloodbank/payments" element={<BloodBankPayments />} />
-                <Route path="/bloodbank/profile" element={<BloodBankProfile />} />
-                <Route path="/bloodbank/notifications" element={<BloodBankDashboard />} />
+                <Route path="/bloodbank/dashboard" element={<ProtectedRoute roles={['blood_bank']}><BloodBankDashboard /></ProtectedRoute>} />
+                <Route path="/bloodbank/inventory" element={<ProtectedRoute roles={['blood_bank']}><BloodBankInventory /></ProtectedRoute>} />
+                <Route path="/bloodbank/donations" element={<ProtectedRoute roles={['blood_bank']}><BloodBankDonations /></ProtectedRoute>} />
+                <Route path="/bloodbank/donors" element={<ProtectedRoute roles={['blood_bank']}><BloodBankDonors /></ProtectedRoute>} />
+                <Route path="/bloodbank/health-checks" element={<ProtectedRoute roles={['blood_bank']}><BloodBankHealthChecks /></ProtectedRoute>} />
+                <Route path="/bloodbank/requests" element={<ProtectedRoute roles={['blood_bank']}><BloodBankRequests /></ProtectedRoute>} />
+                <Route path="/bloodbank/issues" element={<ProtectedRoute roles={['blood_bank']}><BloodBankIssues /></ProtectedRoute>} />
+                <Route path="/bloodbank/payments" element={<ProtectedRoute roles={['blood_bank']}><BloodBankPayments /></ProtectedRoute>} />
+                <Route path="/bloodbank/profile" element={<ProtectedRoute roles={['blood_bank']}><BloodBankProfile /></ProtectedRoute>} />
+                <Route path="/bloodbank/notifications" element={<ProtectedRoute roles={['blood_bank']}><BloodBankDashboard /></ProtectedRoute>} />
 
                 {/* Admin Portal */}
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/notifications" element={<AdminNotifications />} />
-                <Route path="/admin/approvals" element={<AdminApprovals />} />
-                <Route path="/admin/donors" element={<AdminDonors />} />
-                <Route path="/admin/hospitals" element={<AdminHospitals />} />
-                <Route path="/admin/blood-banks" element={<AdminBloodBanks />} />
-                <Route path="/admin/inventory" element={<AdminInventory />} />
-                <Route path="/admin/requests" element={<AdminRequests />} />
-                <Route path="/admin/donations" element={<AdminDonations />} />
-                <Route path="/admin/health-checks" element={<AdminHealthChecks />} />
-                <Route path="/admin/issues" element={<AdminIssues />} />
-                <Route path="/admin/payments" element={<AdminPayments />} />
-                <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/reports" element={<AdminReports />} />
-                <Route path="/admin/audit" element={<AdminAudit />} />
-                <Route path="/admin/settings" element={<AdminSettings />} />
+                <Route path="/admin/dashboard" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/admin/notifications" element={<ProtectedRoute roles={['admin']}><AdminNotifications /></ProtectedRoute>} />
+                <Route path="/admin/approvals" element={<ProtectedRoute roles={['admin']}><AdminApprovals /></ProtectedRoute>} />
+                <Route path="/admin/donors" element={<ProtectedRoute roles={['admin']}><AdminDonors /></ProtectedRoute>} />
+                <Route path="/admin/hospitals" element={<ProtectedRoute roles={['admin']}><AdminHospitals /></ProtectedRoute>} />
+                <Route path="/admin/blood-banks" element={<ProtectedRoute roles={['admin']}><AdminBloodBanks /></ProtectedRoute>} />
+                <Route path="/admin/inventory" element={<ProtectedRoute roles={['admin']}><AdminInventory /></ProtectedRoute>} />
+                <Route path="/admin/requests" element={<ProtectedRoute roles={['admin']}><AdminRequests /></ProtectedRoute>} />
+                <Route path="/admin/donations" element={<ProtectedRoute roles={['admin']}><AdminDonations /></ProtectedRoute>} />
+                <Route path="/admin/health-checks" element={<ProtectedRoute roles={['admin']}><AdminHealthChecks /></ProtectedRoute>} />
+                <Route path="/admin/issues" element={<ProtectedRoute roles={['admin']}><AdminIssues /></ProtectedRoute>} />
+                <Route path="/admin/payments" element={<ProtectedRoute roles={['admin']}><AdminPayments /></ProtectedRoute>} />
+                <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><AdminUsers /></ProtectedRoute>} />
+                <Route path="/admin/reports" element={<ProtectedRoute roles={['admin']}><AdminReports /></ProtectedRoute>} />
+                <Route path="/admin/audit" element={<ProtectedRoute roles={['admin']}><AdminAudit /></ProtectedRoute>} />
+                <Route path="/admin/settings" element={<ProtectedRoute roles={['admin']}><AdminSettings /></ProtectedRoute>} />
             </Routes>
         </BrowserRouter>
     );

@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Bell, ChevronDown, Droplets } from 'lucide-react';
 import RecordDonationModal from './RecordDonationModal';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 import { getDashboard } from '../../api/bloodBankApi';
 
 export default function BloodBankTopBar({ title, page }) {
     const [showModal, setShowModal] = useState(false);
     const [totalUnits, setTotalUnits] = useState(0);
     const [emergencyCount, setEmergencyCount] = useState(0);
+    const [displayName, setDisplayName] = useState('');
+    const { user } = useAuth();
 
     useEffect(() => {
         getDashboard().then(data => {
@@ -17,6 +21,39 @@ export default function BloodBankTopBar({ title, page }) {
             setEmergencyCount(emergency);
         }).catch(() => {});
     }, []);
+
+    useEffect(() => {
+        let mounted = true;
+
+        if (!user?.entity_id) {
+            setDisplayName('');
+            return () => { mounted = false; };
+        }
+
+        apiFetch(`/blood-banks/${user.entity_id}`)
+            .then(async (res) => {
+                const data = await res.json().catch(() => null);
+                if (!mounted || !res.ok || !data) return;
+
+                const bankName = typeof data.bank_name === 'string' ? data.bank_name.trim() : '';
+                if (bankName) {
+                    setDisplayName(bankName);
+                }
+            })
+            .catch(() => {});
+
+        return () => { mounted = false; };
+    }, [user?.entity_id]);
+
+    const nameToShow = displayName || user?.email || 'Blood Bank';
+    const firstName = nameToShow.split(' ').filter(Boolean)[0] || 'Blood';
+    const initials = nameToShow
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase() || 'BB';
 
     return (
         <>
@@ -56,8 +93,8 @@ export default function BloodBankTopBar({ title, page }) {
                     <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.08)' }} />
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(217,0,37,0.15)', border: '1px solid rgba(217,0,37,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--red)', letterSpacing: 1 }}>BB</div>
-                        <span style={{ fontFamily: 'var(--font-sub)', fontWeight: 600, fontSize: 14, color: '#fff' }}>Suresh</span>
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(217,0,37,0.15)', border: '1px solid rgba(217,0,37,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--red)', letterSpacing: 1 }}>{initials}</div>
+                        <span style={{ fontFamily: 'var(--font-sub)', fontWeight: 600, fontSize: 14, color: '#fff' }}>{firstName}</span>
                         <ChevronDown size={14} color="var(--text3)" />
                     </div>
                 </div>

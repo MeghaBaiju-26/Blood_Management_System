@@ -4,6 +4,7 @@ import { Search, Users, X, Check } from 'lucide-react';
 import BloodBankLayout from '../../components/bloodbank/BloodBankLayout';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
 import RecordDonationModal from '../../components/bloodbank/RecordDonationModal';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
 import { getDonors, registerDonor, getHealthChecks, getDonations } from '../../api/bloodBankApi';
 
 const STATUS_TABS = ['All', 'Eligible', 'Cooling', 'Deferred'];
@@ -160,7 +161,7 @@ export default function BloodBankDonors() {
 
     useEffect(() => { fetchAll(); }, []);
 
-    if (loading) return <BloodBankLayout title="Donors" page="DONORS"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: 13 }}>Loading donors...</div></BloodBankLayout>;
+    if (loading) return <BloodBankLayout title="Donors" page="DONORS"><BloodBankLoadingSkeleton showHero={false} cardCount={4} listRows={5} /></BloodBankLayout>;
     if (error) return <BloodBankLayout title="Donors" page="DONORS"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--red)', fontSize: 13 }}>Error: {error}</div></BloodBankLayout>;
 
     const getStatus = (d) => d.eligibility_status || (d.status === 'active' ? 'Eligible' : 'Deferred');

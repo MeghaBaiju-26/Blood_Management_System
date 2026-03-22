@@ -10,6 +10,7 @@ import StatusBadge from '../../components/hospital/StatusBadge';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
 import StockUpdateModal from '../../components/bloodbank/StockUpdateModal';
 import IssueBloodModal from '../../components/bloodbank/IssueBloodModal';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
 import { getDashboard, getStockTrend } from '../../api/bloodBankApi';
 
 const STOCK_ORDER = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
@@ -60,7 +61,7 @@ export default function BloodBankDashboard() {
 
     if (loading) return (
         <BloodBankLayout title="Dashboard" page="DASHBOARD">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: 13 }}>Loading dashboard...</div>
+            <BloodBankLoadingSkeleton showHero cardCount={4} listRows={5} />
         </BloodBankLayout>
     );
     if (error) return (

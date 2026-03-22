@@ -2,19 +2,9 @@ CREATE DATABASE IF NOT EXISTS blood_management;
 USE blood_management;
 
 -- ==============================
--- 1. USERS
+-- REMOVE LEGACY TABLES
 -- ==============================
-CREATE TABLE IF NOT EXISTS users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'hospital', 'donor') NOT NULL,
-    phone_no VARCHAR(15),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    status ENUM('active', 'inactive') DEFAULT 'active'
-);
+DROP TABLE IF EXISTS users;
 
 -- ==============================
 -- 2. BLOOD BANK
@@ -156,6 +146,53 @@ CREATE TABLE IF NOT EXISTS payment (
     FOREIGN KEY (request_id) REFERENCES blood_request(request_id),
     FOREIGN KEY (hospital_id) REFERENCES hospital(hospital_id),
     FOREIGN KEY (bank_id) REFERENCES blood_bank(bank_id)
+);
+
+-- ==============================
+-- 12. AUTH USERS
+-- Unified auth table for donor/hospital/blood_bank/admin login
+-- ==============================
+CREATE TABLE IF NOT EXISTS auth_users (
+    user_id INT NOT NULL AUTO_INCREMENT,
+    role ENUM('donor', 'hospital', 'blood_bank', 'admin') NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    account_status ENUM('pending', 'active', 'rejected', 'suspended') NOT NULL DEFAULT 'pending',
+    linked_donor_id INT NULL,
+    linked_hospital_id INT NULL,
+    linked_bank_id INT NULL,
+    last_login_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id),
+    UNIQUE KEY uq_auth_users_email (email),
+    UNIQUE KEY uq_auth_users_linked_donor (linked_donor_id),
+    UNIQUE KEY uq_auth_users_linked_hospital (linked_hospital_id),
+    UNIQUE KEY uq_auth_users_linked_bank (linked_bank_id),
+    FOREIGN KEY (linked_donor_id) REFERENCES donor(donor_id),
+    FOREIGN KEY (linked_hospital_id) REFERENCES hospital(hospital_id),
+    FOREIGN KEY (linked_bank_id) REFERENCES blood_bank(bank_id)
+);
+
+-- ==============================
+-- 13. AUTH REFRESH TOKENS
+-- ==============================
+CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
+    token_id BIGINT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    revoked_at DATETIME NULL,
+    rotated_from BIGINT NULL,
+    ip_address VARCHAR(64) NULL,
+    user_agent VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (token_id),
+    UNIQUE KEY uq_auth_refresh_tokens_hash (token_hash),
+    KEY idx_auth_refresh_tokens_user (user_id),
+    KEY idx_auth_refresh_tokens_expires_at (expires_at),
+    FOREIGN KEY (user_id) REFERENCES auth_users(user_id),
+    FOREIGN KEY (rotated_from) REFERENCES auth_refresh_tokens(token_id)
 );
 
 -- ==============================

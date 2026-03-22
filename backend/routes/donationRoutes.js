@@ -3,6 +3,14 @@ const router = express.Router();
 const db = require('../config/db');
 
 router.get('/donor/:id', (req, res) => {
+    if (!["donor", "admin", "blood_bank"].includes(req.auth.role)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (req.auth.role === "donor" && Number(req.auth.entityId) !== Number(req.params.id)) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+
     const donorId = req.params.id;
 
     const sql = `

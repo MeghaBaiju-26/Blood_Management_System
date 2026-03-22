@@ -2,20 +2,31 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { apiFetch } from '../../services/http';
 
 export default function AdminBloodBanks() {
     const [search, setSearch] = useState('');
     const [expanded, setExpanded] = useState(null);
     const [banks, setBanks] = useState([]);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        fetch("http://localhost:5000/api/admin/blood-banks")
+        apiFetch("/admin/blood-banks")
             .then(res => res.json())
             .then(data => {
-                console.log("API:", data);
+                if (!Array.isArray(data)) {
+                    setError(data?.message || 'Failed to load blood banks');
+                    setBanks([]);
+                    return;
+                }
+                setError('');
                 setBanks(data);
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error(err);
+                setError('Failed to load blood banks');
+                setBanks([]);
+            });
     }, []);
 
     const filtered = banks.filter(b =>
@@ -29,6 +40,17 @@ export default function AdminBloodBanks() {
     return (
         <AdminLayout title="Blood Banks" page="BLOOD BANKS">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {error && (
+                    <div style={{
+                        background: '#0F0F17',
+                        border: '1px solid rgba(248,113,113,0.28)',
+                        borderRadius: 14,
+                        padding: 14,
+                        color: '#f87171'
+                    }}>
+                        {error}
+                    </div>
+                )}
 
                 {/* STATS */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>

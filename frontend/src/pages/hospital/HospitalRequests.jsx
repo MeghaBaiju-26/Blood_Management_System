@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Droplets, Plus, X } from 'lucide-react';
 import HospitalLayout from '../../components/hospital/HospitalLayout';
 import StatusBadge from '../../components/hospital/StatusBadge';
 import HospitalLoadingSkeleton from '../../components/hospital/HospitalLoadingSkeleton';
+import { useAuth } from '../../auth/AuthContext';
+import { apiFetch } from '../../services/http';
 
 const cardStyle = {
     background: '#0F0F17',
@@ -110,6 +113,7 @@ function NewRequestModal({
 
 export default function HospitalRequests() {
     const location = useLocation();
+    const { user } = useAuth();
     const selectedBank = location.state?.bank_id;
 
     const [requests, setRequests] = useState([]);
@@ -123,22 +127,25 @@ export default function HospitalRequests() {
     const [units, setUnits] = useState(1);
     const [bloodGroup, setBloodGroup] = useState('');
     const [loading, setLoading] = useState(false);
+    const [expandedRequest, setExpandedRequest] = useState(null);
 
-   const hospitalId = 1; // KIMS
+   const hospitalId = user?.entity_id;
 
 const fetchRequests = async () => {
-    const res = await fetch(`http://localhost:5000/blood-requests/detailed/${hospitalId}`);
+    const res = await apiFetch(`/blood-requests/detailed/${hospitalId}`);
     const data = await res.json();
     setRequests(Array.isArray(data) ? data : []);
 };
 
     const fetchPatients = async () => {
-        const res = await fetch('http://localhost:5000/patients');
+        const res = await apiFetch(`/patients/${hospitalId}`);
         const data = await res.json();
         setPatients(Array.isArray(data) ? data : []);
     };
 
     useEffect(() => {
+        if (!hospitalId) return;
+
         const load = async () => {
             try {
                 await Promise.all([fetchRequests(), fetchPatients()]);
@@ -150,7 +157,7 @@ const fetchRequests = async () => {
             }
         };
         load();
-    }, []);
+    }, [hospitalId]);
 
     useEffect(() => {
         if (selectedBank) {
@@ -166,17 +173,16 @@ const fetchRequests = async () => {
 
     const handleSubmit = async () => {
         if (!patientId || !bankId || !units) {
-            alert('Please fill all fields');
+            toast.error('Please fill all fields');
             return;
         }
 
         setLoading(true);
         try {
-            await fetch('http://localhost:5000/blood-requests', {
+            await apiFetch('/blood-requests', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    hospital_id: 1,
+                    hospital_id: hospitalId,
                     patient_id: parseInt(patientId, 10),
                     bank_id: parseInt(bankId, 10),
                     units_required: parseInt(units, 10)
@@ -266,25 +272,74 @@ const fetchRequests = async () => {
                         <div style={{ color: 'var(--text3)' }}>No requests found.</div>
                     ) : (
                         requests.map((req, i) => (
-                            <div
-                                key={req.request_id}
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '120px 90px 90px 90px 110px 110px 1fr',
-                                    gap: 10,
-                                    alignItems: 'center',
-                                    padding: '12px 0',
-                                    borderBottom: i < requests.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                                    color: 'var(--text2)'
-                                }}
-                            >
-                                <div style={{ color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 11 }}>REQ-{req.request_id}</div>
-                                <div>{req.hospital_name}</div>
-                                <div>{req.patient_name}</div>
-                                <div>{req.bank_name}</div>
-                                <div>{req.units_required} units</div>
-                                <StatusBadge status={req.status} />
-                                <div>{fmt(req.request_date)}</div>
+                            <div key={req.request_id}>
+                                <div
+                                    onClick={() => setExpandedRequest(expandedRequest === req.request_id ? null : req.request_id)}
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '120px 90px 90px 90px 110px 110px 1fr',
+                                        gap: 10,
+                                        alignItems: 'center',
+                                        padding: '12px 0',
+                                        borderBottom: i < requests.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                        color: 'var(--text2)',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.02)'}
+                                    onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                >
+                                    <div style={{ color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 11 }}>REQ-{req.request_id}</div>
+                                    <div>{req.hospital_name}</div>
+                                    <div>{req.patient_name}</div>
+                                    <div>{req.bank_name}</div>
+                                    <div>{req.units_required} units</div>
+                                    <StatusBadge status={req.status} />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <div>{fmt(req.request_date)}</div>
+                                        <div style={{ transform: expandedRequest === req.request_id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</div>
+                                    </div>
+                                </div>
+                                
+                                {expandedRequest === req.request_id && (
+                                    <motion.div 
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        style={{ 
+                                            background: 'rgba(255,255,255,0.02)', 
+                                            borderRadius: 8, 
+                                            padding: 16, 
+                                            marginTop: 8,
+                                            marginBottom: 12,
+                                            border: '1px solid rgba(255,255,255,0.05)'
+                                        }}
+                                    >
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                            <div>
+                                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>PATIENT DETAILS</div>
+                                                <div style={{ color: '#fff', marginBottom: 2 }}>{req.patient_name}</div>
+                                                <div style={{ fontSize: 12, color: 'var(--text2)' }}>Blood Group: {req.blood_group}</div>
+                                                <div style={{ fontSize: 12, color: 'var(--text2)' }}>Ward: {req.ward || 'General'}</div>
+                                            </div>
+                                            <div>
+                                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>BANK DETAILS</div>
+                                                <div style={{ color: '#fff', marginBottom: 2 }}>{req.bank_name}</div>
+                                                <div style={{ fontSize: 12, color: 'var(--text2)' }}>City: {req.bank_city}</div>
+                                                <div style={{ fontSize: 12, color: 'var(--text2)' }}>Priority: {req.priority || 'Normal'}</div>
+                                            </div>
+                                        </div>
+                                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>STATUS HISTORY</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <StatusBadge status={req.status} />
+                                                <span style={{ fontSize: 12, color: 'var(--text2)' }}>
+                                                    Last updated: {fmt(req.request_date)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
                             </div>
                         ))
                     )}

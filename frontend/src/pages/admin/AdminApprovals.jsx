@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Clock, Check, X, FileText } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import StatusBadge from '../../components/hospital/StatusBadge';
+import { apiFetch } from '../../services/http';
 
 
 function fmt(d) { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
@@ -17,21 +18,18 @@ export default function AdminApprovals() {
     const [toast, setToast] = useState(null);
     const [approvals, setApprovals] = useState([]);
 useEffect(() => {
-    fetch("http://localhost:5000/api/admin/approvals")
+    apiFetch("/auth/pending-accounts")
         .then(res => res.json())
         .then(data => {
-
-            console.log("API DATA:", data); // debug
-
             const mapped = data.map(r => ({
-                id: r.id,
-                type: "Hospital",
-                org_name: r.hospital_name, // ✅ FIX
+                id: r.user_id,
+                type: r.role === 'hospital' ? "Hospital" : "Blood Bank",
+                org_name: r.email,
                 city: "Kerala",
-                submitted: r.request_date,
-                ref: `REQ-${r.id}`,
-               contact: `Patient: ${r.patient_name || "Unknown"}`, // ✅ FIX
-               status: r.status.toLowerCase()
+                submitted: r.created_at,
+                ref: `ACC-${r.user_id}`,
+                contact: `Email: ${r.email}`,
+                status: r.account_status.toLowerCase()
             }));
 
             setApprovals(mapped);
@@ -41,15 +39,17 @@ useEffect(() => {
 
     const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
    const handleApprove = async (id) => {
-    await fetch(`http://localhost:5000/api/admin/approve/${id}`, {
-        method: "PUT"
+    await apiFetch(`/auth/accounts/${id}/approval`, {
+        method: "PUT",
+        body: JSON.stringify({ action: "approve" }),
     });
     setApprovals(a => a.filter(x => x.id !== id));
     showToast('Application approved successfully');
 };
   const handleReject = async () => {
-    await fetch(`http://localhost:5000/api/admin/reject/${rejectModal}`, {
-        method: "PUT"
+    await apiFetch(`/auth/accounts/${rejectModal}/approval`, {
+        method: "PUT",
+        body: JSON.stringify({ action: "reject" }),
     });
 
     setApprovals(a => a.filter(x => x.id !== rejectModal));

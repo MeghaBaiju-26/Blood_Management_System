@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import {
     User, Phone, Mail, Lock, Building2, Hash, FileText,
     Droplets, Database, BedDouble, Clock, ChevronRight, Edit2,
@@ -14,6 +15,7 @@ import ProgressSteps from '../auth/ProgressSteps';
 import RoleSelector from '../auth/RoleSelector';
 import DistrictSelector from '../auth/DistrictSelector';
 import BloodTypeSelector from '../auth/BloodTypeSelector';
+import { apiFetch } from '../services/http';
 
 // ─── Shared constants ─────────────────────────────────────────────────────────
 
@@ -52,8 +54,9 @@ const fadeUp = (delay = 0) => ({
 
 function PasswordStrength({ password }) {
     const strength = (() => {
+        if (password.length < 8) return 0;
         let s = 0;
-        if (password.length >= 8) s++;
+        if (/[a-z]/.test(password)) s++;
         if (/[A-Z]/.test(password)) s++;
         if (/[0-9]/.test(password)) s++;
         if (/[^A-Za-z0-9]/.test(password)) s++;
@@ -76,6 +79,21 @@ function PasswordStrength({ password }) {
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: colors[strength] }}>{labels[strength]}</span>
         </div>
     );
+}
+
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+
+function isStrongPassword(password) {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,72}$/.test(String(password || ''));
+}
+
+function isValidPhone(phone) {
+    const raw = String(phone || '').trim();
+    const normalized = raw.replace(/[^\d+]/g, '');
+    const digits = normalized.replace(/\D/g, '');
+    return digits.length >= 10 && digits.length <= 15;
 }
 
 function ReviewCard({ title, data, onEdit }) {
@@ -251,9 +269,55 @@ function DonorRegister({ onSuccess }) {
 
     const goTo = (s) => { setDir(s > step ? 1 : -1); setStep(s); };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        if (!name || !email || !password || !bloodGroup) {
+            toast.error('Please fill required fields: name, email, password and blood group.');
+            return;
+        }
+        if (!isValidEmail(email)) {
+            toast.error('Please enter a valid email address.');
+            return;
+        }
+        if (phone && !isValidPhone(phone)) {
+            toast.error('Please enter a valid phone number (10 to 15 digits).');
+            return;
+        }
+        if (!isStrongPassword(password)) {
+            toast.error('Password must be 8-72 chars and include uppercase, lowercase, number and special character.');
+            return;
+        }
+        if (password !== confirm) {
+            toast.error('Password and confirm password do not match.');
+            return;
+        }
+
         setLoading(true);
-        setTimeout(() => { setLoading(false); onSuccess('donor'); }, 1500);
+        try {
+            const res = await apiFetch('/auth/register/donor', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name,
+                    age: age ? Number(age) : null,
+                    gender,
+                    phone_no: phone,
+                    blood_group: bloodGroup,
+                    city: district,
+                    email,
+                    password,
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err?.message || 'Registration failed');
+            }
+
+            onSuccess('donor');
+        } catch (error) {
+            toast.error(error.message || 'Registration failed');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -285,6 +349,7 @@ function DonorRegister({ onSuccess }) {
                                     <PasswordStrength password={password} />
                                 </div>
                             </div>
+                            <AuthInput label="CONFIRM PASSWORD" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} icon={Lock} required />
                         </FormSection>
                         <AuthButton variant="primary" fullWidth onClick={() => goTo(1)}>Continue to Step 2 →</AuthButton>
                     </motion.div>
@@ -383,9 +448,52 @@ function HospitalRegister({ onSuccess }) {
 
     const goTo = (s) => { setDir(s > step ? 1 : -1); setStep(s); };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        if (!orgName || !email || !password) {
+            toast.error('Please fill required fields: hospital name, email and password.');
+            return;
+        }
+        if (!isValidEmail(email)) {
+            toast.error('Please enter a valid email address.');
+            return;
+        }
+        if (contact && !isValidPhone(contact)) {
+            toast.error('Please enter a valid contact number (10 to 15 digits).');
+            return;
+        }
+        if (!isStrongPassword(password)) {
+            toast.error('Password must be 8-72 chars and include uppercase, lowercase, number and special character.');
+            return;
+        }
+        if (password !== confirm) {
+            toast.error('Password and confirm password do not match.');
+            return;
+        }
+
         setLoading(true);
-        setTimeout(() => { setLoading(false); onSuccess('hospital'); }, 2000);
+        try {
+            const res = await apiFetch('/auth/register/hospital', {
+                method: 'POST',
+                body: JSON.stringify({
+                    hospital_name: orgName,
+                    city: district,
+                    contact_no: contact,
+                    email,
+                    password,
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err?.message || 'Registration failed');
+            }
+
+            onSuccess('hospital');
+        } catch (error) {
+            toast.error(error.message || 'Registration failed');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -437,7 +545,7 @@ function HospitalRegister({ onSuccess }) {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                 <div>
                                     <AuthInput label="PASSWORD" type="password"
-                                        value={password} onChange={e => setPassword(e.target.value)} icon={Lock} required hint="Min 8 chars, 1 number, 1 special" />
+                                        value={password} onChange={e => setPassword(e.target.value)} icon={Lock} required hint="8+ chars with uppercase, lowercase, number, special" />
                                     <PasswordStrength password={password} />
                                 </div>
                                 <AuthInput label="CONFIRM PASSWORD" type="password"
@@ -554,9 +662,52 @@ function BloodBankRegister({ onSuccess }) {
 
     const goTo = (s) => { setDir(s > step ? 1 : -1); setStep(s); };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        if (!bankName || !email || !password) {
+            toast.error('Please fill required fields: bank name, email and password.');
+            return;
+        }
+        if (!isValidEmail(email)) {
+            toast.error('Please enter a valid email address.');
+            return;
+        }
+        if (contact && !isValidPhone(contact)) {
+            toast.error('Please enter a valid contact number (10 to 15 digits).');
+            return;
+        }
+        if (!isStrongPassword(password)) {
+            toast.error('Password must be 8-72 chars and include uppercase, lowercase, number and special character.');
+            return;
+        }
+        if (password !== confirm) {
+            toast.error('Password and confirm password do not match.');
+            return;
+        }
+
         setLoading(true);
-        setTimeout(() => { setLoading(false); onSuccess('blood_bank'); }, 2000);
+        try {
+            const res = await apiFetch('/auth/register/blood-bank', {
+                method: 'POST',
+                body: JSON.stringify({
+                    bank_name: bankName,
+                    city: district,
+                    contact_no: contact,
+                    email,
+                    password,
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err?.message || 'Registration failed');
+            }
+
+            onSuccess('blood_bank');
+        } catch (error) {
+            toast.error(error.message || 'Registration failed');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

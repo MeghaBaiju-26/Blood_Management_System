@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Download, ChevronDown, ChevronUp } from 'lucide-react';
 import BloodBankLayout from '../../components/bloodbank/BloodBankLayout';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
 import BloodGroupBadge from '../../components/hospital/BloodGroupBadge';
 import { getIssues } from '../../api/bloodBankApi';
 
@@ -64,7 +65,7 @@ export default function BloodBankIssues() {
             .catch(err => { setError(err.message); setLoading(false); });
     }, []);
 
-    if (loading) return <BloodBankLayout title="Blood Issues" page="ISSUES"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: 13 }}>Loading issues...</div></BloodBankLayout>;
+    if (loading) return <BloodBankLayout title="Blood Issues" page="ISSUES"><BloodBankLoadingSkeleton showHero={false} cardCount={4} listRows={6} /></BloodBankLayout>;
     if (error) return <BloodBankLayout title="Blood Issues" page="ISSUES"><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--red)', fontSize: 13 }}>Error: {error}</div></BloodBankLayout>;
 
     const totalUnits = issues.reduce((s, i) => s + i.units_issued, 0);

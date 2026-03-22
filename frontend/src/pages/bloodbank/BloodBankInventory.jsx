@@ -4,6 +4,7 @@ import { Download } from 'lucide-react';
 import BloodBankLayout from '../../components/bloodbank/BloodBankLayout';
 import StockCard from '../../components/bloodbank/StockCard';
 import StockUpdateModal from '../../components/bloodbank/StockUpdateModal';
+import BloodBankLoadingSkeleton from '../../components/bloodbank/BloodBankLoadingSkeleton';
 import { getStock } from '../../api/bloodBankApi';
 
 const STOCK_ORDER = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
@@ -28,7 +29,7 @@ export default function BloodBankInventory() {
 
     if (loading) return (
         <BloodBankLayout title="Inventory" page="INVENTORY">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: 'var(--font-mono)', color: 'var(--text3)', fontSize: 13 }}>Loading inventory...</div>
+            <BloodBankLoadingSkeleton showHero={false} cardCount={4} listRows={4} />
         </BloodBankLayout>
     );
     if (error) return (

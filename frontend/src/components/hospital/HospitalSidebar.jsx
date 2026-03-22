@@ -6,6 +6,7 @@ import {
     Users, CreditCard, User, Settings, LogOut,
 } from 'lucide-react';
 import { mockHospital, mockBloodRequests } from '../../data/hospitalMockData';
+import { useAuth } from '../../auth/AuthContext';
 
 const pendingCount = mockBloodRequests.filter(r => r.status === 'Pending').length;
 const activePatients = 5;
@@ -44,6 +45,7 @@ const NAV_SECTIONS = [
 
 export default function HospitalSidebar() {
     const navigate = useNavigate();
+    const { signOut } = useAuth();
 
     return (
         <motion.aside
@@ -143,7 +145,7 @@ export default function HospitalSidebar() {
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#fff' }}>{mockHospital.hospital_id}</div>
                 </div>
                 <button
-                    onClick={() => navigate('/login')}
+                    onClick={async () => { await signOut(); navigate('/login'); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)', padding: 0, transition: 'color 0.2s' }}
                     onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
                     onMouseLeave={e => e.currentTarget.style.color = 'var(--text3)'}
